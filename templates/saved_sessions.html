@@ -1,0 +1,316 @@
+{% extends "base_new_journal.html" %}
+
+{% block title %}Broker Sessions — Trading Journal{% endblock %}
+
+{% block extra_css %}
+<style>
+  .session-card {
+    background: var(--card);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .session-card.active {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+  }
+  
+  .broker-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-size: 1.25rem;
+    margin-right: 1rem;
+  }
+  
+  .kite-logo { background: linear-gradient(135deg, #ff6b35, #f7931e); }
+  .dhan-logo { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+  .angel-logo { background: linear-gradient(135deg, #dc2626, #ef4444); }
+  
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .status-active {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+  
+  .btn-quick {
+    background: linear-gradient(135deg, #0ea5a4, #0369a1);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  
+  .btn-quick:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(14, 165, 164, 0.3);
+  }
+  
+  .btn-disconnect {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  
+  .btn-disconnect:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    color: white;
+  }
+  
+  .no-sessions {
+    text-align: center;
+    padding: 3rem;
+    color: #94a3b8;
+  }
+  
+  .page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .page-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f8fafc, #cbd5e1, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="page-header">
+    <h1>🔗 Broker Sessions</h1>
+    <p class="text-gray-400">Manage your connected broker accounts and trading sessions</p>
+  </div>
+  
+  {% if sessions %}
+    <div class="grid gap-4">
+      {% for session in sessions %}
+      <div class="session-card {% if session.is_active %}active{% endif %}">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center">
+            <div class="broker-logo {{ session.broker }}-logo">
+              {{ session.broker[0].upper() }}
+            </div>
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <h3 class="text-xl font-bold text-white">{{ session.broker.upper() }}</h3>
+                <span class="status-badge {% if session.is_active %}status-active{% else %}status-inactive{% endif %}">
+                  {% if session.is_active %}Active{% else %}Expired{% endif %}
+                </span>
+              </div>
+              <div class="grid grid-cols-2 gap-4 text-sm text-gray-400">
+                <div><strong class="text-gray-300">User ID:</strong> {{ session.user_id }}</div>
+                <div><strong class="text-gray-300">Client Code:</strong> {{ session.client_code }}</div>
+                <div><strong class="text-gray-300">Last Updated:</strong> {{ session.updated_at.strftime('%Y-%m-%d %H:%M') if session.updated_at else 'N/A' }}</div>
+                <div><strong class="text-gray-300">Expires:</strong> {{ session.expires_at.strftime('%Y-%m-%d %H:%M') if session.expires_at else 'N/A' }}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            {% if session.is_active %}
+              <button onclick="quickLogin('{{ session.broker }}', '{{ session.user_id }}')" class="btn-quick">
+                <i class="fas fa-bolt mr-1"></i>Quick Login
+              </button>
+            {% else %}
+              <a href="/api/multi_broker/{{ session.broker }}/login?user_id={{ session.user_id }}" class="btn-quick">
+                <i class="fas fa-plug mr-1"></i>Reconnect
+              </a>
+            {% endif %}
+            <a href="/api/multi_broker/disconnect/{{ session.broker }}/{{ session.user_id }}" 
+               class="btn-disconnect" 
+               onclick="return confirm('Are you sure you want to disconnect from {{ session.broker.upper() }}?')">
+              <i class="fas fa-unlink mr-1"></i>Disconnect
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="no-sessions">
+      <div class="text-center">
+        <svg class="w-16 h-16 mx-auto text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        <h3 class="text-xl font-semibold text-white mb-2">No Active Sessions</h3>
+        <p class="text-gray-400 mb-4">You don't have any connected broker accounts yet.</p>
+        <p class="text-gray-500 mb-6">Connect to your brokers to start live trading:</p>
+        <div class="flex flex-wrap gap-3 justify-center">
+          <a href="/calculatentrade_journal/real_broker_connect" class="btn-quick">
+            <i class="fas fa-plus mr-2"></i>Connect Brokers
+          </a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+  
+  <div class="text-center mt-8">
+    <a href="/calculatentrade_journal/real_broker_connect" class="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Back to Broker Connection
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+        function quickLogin(broker, userId) {
+            // Redirect directly to real_broker_connect page with broker and user info
+            window.location.href = `/calculatentrade_journal/real_broker_connect?broker=${broker}&user_id=${userId}&quick_login=true`;
+        }
+        
+        function viewBrokerData(broker, userId, dataType) {
+            const modal = document.getElementById('dataModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            // Show modal and loading state
+            modal.style.display = 'block';
+            modalTitle.textContent = `${broker.toUpperCase()} - ${dataType.charAt(0).toUpperCase() + dataType.slice(1)}`;
+            modalBody.innerHTML = '<div class="loading">Loading...</div>';
+            
+            // Fetch data from API
+            fetch(`/api/multi_broker/${broker}/${dataType}?user_id=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok && data.data) {
+                        displayData(data.data, dataType);
+                    } else {
+                        modalBody.innerHTML = `<div class="error">Error: ${data.message || 'Failed to fetch data'}</div>`;
+                    }
+                })
+                .catch(error => {
+                    modalBody.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                });
+        }
+        
+        function displayAllData(data) {
+            const modalBody = document.getElementById('modalBody');
+            let html = '';
+            
+            // Display Orders
+            if (data.orders && data.orders.length > 0) {
+                html += '<h3>Orders</h3>';
+                html += createDataTable(data.orders);
+            } else {
+                html += '<h3>Orders</h3><div class="no-data">No orders found</div>';
+            }
+            
+            // Display Positions
+            if (data.positions && data.positions.length > 0) {
+                html += '<h3 style="margin-top: 20px;">Positions</h3>';
+                html += createDataTable(data.positions);
+            } else {
+                html += '<h3 style="margin-top: 20px;">Positions</h3><div class="no-data">No positions found</div>';
+            }
+            
+            // Display Trades
+            if (data.trades && data.trades.length > 0) {
+                html += '<h3 style="margin-top: 20px;">Trades</h3>';
+                html += createDataTable(data.trades);
+            } else {
+                html += '<h3 style="margin-top: 20px;">Trades</h3><div class="no-data">No trades found</div>';
+            }
+            
+            modalBody.innerHTML = html;
+        }
+        
+        function createDataTable(data) {
+            if (!data || data.length === 0) {
+                return '<div class="no-data">No data available</div>';
+            }
+            
+            let html = '<table class="data-table"><thead><tr>';
+            
+            // Get headers from first item
+            const headers = Object.keys(data[0]);
+            headers.forEach(header => {
+                html += `<th>${header.replace(/_/g, ' ').toUpperCase()}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            // Add data rows
+            data.forEach(item => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    let value = item[header];
+                    if (value === null || value === undefined) {
+                        value = '-';
+                    } else if (typeof value === 'object') {
+                        value = JSON.stringify(value);
+                    }
+                    html += `<td>${value}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            return html;
+        }
+        
+        function displayData(data, dataType) {
+            const modalBody = document.getElementById('modalBody');
+            
+            if (!data || data.length === 0) {
+                modalBody.innerHTML = `<div class="no-data">No ${dataType} found</div>`;
+                return;
+            }
+            
+            modalBody.innerHTML = createDataTable(data);
+        }
+        
+        function closeModal() {
+            document.getElementById('dataModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('dataModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+</script>
+{% endblock %}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angel One Login - CalculatenTrade</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #071022;
+            --card: #0f1724;
+            --accent: #0ea5a4;
+            --accent-2: #0369a1;
+        }
+        body {
+            background: var(--bg);
+            color: #e6eef6;
+            font-family: Inter, ui-sans-serif, system-ui;
+            min-height: 100vh;
+        }
+        .angel-gradient {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+        }
+        .form-control {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #f1f5f9;
+            border-radius: 8px;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            background: rgba(30, 41, 59, 0.95);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(14, 165, 164, 0.2);
+            outline: none;
+        }
+        .btn-angel {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-angel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
+        }
+        .btn-refresh {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #cbd5e1;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s ease;
+        }
+        .btn-refresh:hover {
+            background: var(--accent);
+            color: white;
+        }
+        .card-custom {
+            background: var(--card);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <!-- Back Button -->
+            <div class="mb-6">
+                <a href="/multi_broker_connect" class="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Back to Broker Connections
+                </a>
+            </div>
+            
+            <div class="card-custom p-8">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 mx-auto mb-4 angel-gradient rounded-full flex items-center justify-center">
+                        <span class="text-white font-bold text-2xl">A</span>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white mb-2">Angel One Login</h1>
+                    <p class="text-gray-400">Enter your credentials to connect your Angel One account</p>
+                </div>
+                <!-- Form -->
+                <form action="/api/multi_broker/angel/login/password" method="POST" class="space-y-6">
+                    <input type="hidden" name="user_id" value="{{ user_id }}">
+                    
+                    <div>
+                        <label for="client_code" class="block text-sm font-medium text-gray-300 mb-2">
+                            <i class="fas fa-user mr-2"></i>Client Code
+                        </label>
+                        <input type="text" class="form-control w-full" id="client_code" name="client_code" 
+                               placeholder="Enter your Angel One Client Code" required>
+                    </div>
+                    
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+                            <i class="fas fa-lock mr-2"></i>MPIN
+                        </label>
+                        <input type="password" class="form-control w-full" id="password" name="password" 
+                               placeholder="Enter your 4-digit MPIN" required>
+                    </div>
+                    
+                    <div>
+                        <label for="totp" class="block text-sm font-medium text-gray-300 mb-2">
+                            <i class="fas fa-shield-alt mr-2"></i>TOTP Code
+                        </label>
+                        <div class="flex">
+                            <input type="text" class="form-control flex-1" id="totp" name="totp" 
+                                   placeholder="6-digit TOTP" value="{{ totp_value }}" required style="border-radius: 8px 0 0 8px;">
+                            <button type="button" class="btn-refresh" onclick="refreshTOTP()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-400">
+                            <i class="fas fa-clock mr-1"></i>Current TOTP: <strong id="current-totp" class="text-green-400">{{ totp_value }}</strong>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-angel w-full">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Connect to Angel One
+                    </button>
+                </form>
+                
+                <!-- Info Section -->
+                <div class="mt-6 p-4 bg-gradient-to-r from-red-900/20 to-pink-900/20 border border-red-500/30 rounded-lg">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-info-circle text-red-400 mt-1"></i>
+                        <div class="text-sm">
+                            <p class="text-red-300 font-medium mb-1">Connection Details</p>
+                            <p class="text-gray-400">Enter your credentials above to connect</p>
+                            <p class="text-gray-400">TOTP updates every 30 seconds automatically</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function refreshTOTP() {
+            const refreshBtn = document.querySelector('.btn-refresh');
+            const icon = refreshBtn.querySelector('i');
+            
+            // Add loading state
+            icon.classList.add('fa-spin');
+            refreshBtn.disabled = true;
+            
+            fetch('/api/multi_broker/angel/refresh_totp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: '{{ user_id }}',
+                    totp_secret: '{{ totp_secret }}'
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.totp) {
+                        document.getElementById('totp').value = data.totp;
+                        document.getElementById('current-totp').textContent = data.totp;
+                        
+                        // Show success feedback
+                        const currentTotpEl = document.getElementById('current-totp');
+                        currentTotpEl.classList.add('text-green-400');
+                        setTimeout(() => {
+                            currentTotpEl.classList.remove('text-green-400');
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing TOTP:', error);
+                    // Show error feedback
+                    const currentTotpEl = document.getElementById('current-totp');
+                    currentTotpEl.classList.add('text-red-400');
+                    setTimeout(() => {
+                        currentTotpEl.classList.remove('text-red-400');
+                    }, 2000);
+                })
+                .finally(() => {
+                    // Remove loading state
+                    icon.classList.remove('fa-spin');
+                    refreshBtn.disabled = false;
+                });
+        }
+        
+        // Auto-refresh TOTP every 30 seconds
+        setInterval(refreshTOTP, 30000);
+        
+        // Add form submission feedback
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const submitBtn = document.querySelector('.btn-angel');
+            const icon = submitBtn.querySelector('i');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Connecting...';
+        });
+    </script>
+</body>
+</html>
