@@ -48,8 +48,78 @@
       color: var(--accent);
     }
 
+    /* Sidebar: explicit desktop vs mobile behavior */
     .sidebar {
+      /* keep transition but remove 'contain' which can create issues */
       transition: transform 0.3s ease;
+      /* do not create layout containment that may clip fixed positioning */
+      /* contain: layout style paint;  <-- removed intentionally */
+    }
+
+    /* Desktop (>=768px): keep sidebar as normal document flow and scrollable */
+    @media (min-width: 768px) {
+      #sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        left: auto;
+        transform: none !important;
+        visibility: visible !important;
+        z-index: 30;
+        aria-hidden: false;
+      }
+    }
+
+    /* Mobile (<768px): force fixed to viewport, specific selector + !important to override any page rules */
+    @media (max-width: 767px) {
+      #sidebar {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        z-index: 9999 !important;
+        width: 280px !important;
+        max-width: 90vw !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        will-change: transform;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        overflow-y: auto !important;
+        visibility: visible !important;
+      }
+
+      #sidebar.show {
+        transform: translateX(0) !important;
+      }
+
+      /* overlay */
+      .mobile-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 9998;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+        pointer-events: none;
+        backdrop-filter: blur(2px);
+      }
+
+      .mobile-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      /* body lock when sidebar open */
+      body.sidebar-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        left: 0;
+        top: 0;
+      }
     }
 
     .sidebar a.active {
@@ -70,49 +140,6 @@
 
     .muted { color: var(--muted); }
     .transition-all { transition: all 0.25s ease-in-out; }
-    
-    /* Mobile responsive styles - FIXED */
-    @media (max-width: 767px) {
-      .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        z-index: 40;
-        width: 280px;
-        transform: translateX(-100%);
-        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        will-change: transform;
-        backface-visibility: hidden;
-        -webkit-backface-visibility: hidden;
-      }
-      
-      .sidebar.show {
-        transform: translateX(0);
-      }
-      
-      .mobile-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 35;
-        opacity: 0;
-        transition: opacity 0.25s ease;
-        pointer-events: none;
-        backdrop-filter: blur(2px);
-      }
-      
-      .mobile-overlay.active {
-        opacity: 1;
-        pointer-events: all;
-      }
-      
-      body.sidebar-open {
-        overflow: hidden;
-        position: fixed;
-        width: 100%;
-        height: 100%;
-      }
       
       /* Mobile optimizations */
       .space-y-6 > * + * {
@@ -236,11 +263,6 @@
       .mobile-overlay { display: none !important; }
     }
     
-    /* Prevent layout shifts and improve performance */
-    .sidebar {
-      contain: layout style paint;
-    }
-    
     /* Smooth transitions for all interactive elements */
     button, a, .sidebar-item {
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -279,7 +301,7 @@
     <div id="mobile-overlay" class="mobile-overlay"></div>
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-72 bg-[color:var(--card)] border-r border-slate-800 p-4 hidden md:block sticky top-0 h-screen overflow-y-auto sidebar">
+    <aside id="sidebar" class="w-72 bg-[color:var(--card)] border-r border-slate-800 p-4 hidden md:block sidebar" aria-hidden="true">
       <!-- Profile -->
       <div>
         <a href="{{ url_for('home') }}" class="flex items-center gap-3">
@@ -292,7 +314,17 @@
       </div>
       
       <nav class="text-sm sidebar-nav space-y-1 mt-6">
-        <div class="text-xs muted mb-1 sidebar-label uppercase tracking-wider">General</div>
+        <div class="text-xs muted mb-1 sidebar-label uppercase tracking-wider">Home Page</div>
+        
+        <a href="{{ url_for('home') }}" class="flex items-center gap-3 px-3 py-2 rounded transition-all sidebar-item">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            <polyline points="9,22 9,12 15,12 15,22"/>
+          </svg>
+          <span class="sidebar-label">CNT HOME</span>
+        </a>
+        
+        <div class="text-xs muted mt-4 mb-1 sidebar-label uppercase tracking-wider">General</div>
 
         <a href="{{ url_for('calculatentrade.dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded transition-all sidebar-item">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -356,8 +388,8 @@
     
     <div class="flex-1 flex flex-col min-h-screen">
       <!-- Mobile Header -->
-      <header class="md:hidden bg-[color:var(--card)] border-b border-slate-800 p-4 flex items-center justify-between sticky top-0 z-30 mobile-header">
-        <button id="mobile-menu-toggle" class="p-3 rounded-md hover:bg-slate-800/50 transition-colors" aria-label="Open menu" aria-expanded="false" style="-webkit-tap-highlight-color: rgba(255,255,255,0.1); touch-action: manipulation; min-width: 48px; min-height: 48px; display: flex; align-items: center; justify-content: center;">
+      <header class="md:hidden bg-[color:var(--card)] border-b border-slate-800 p-4 flex items-center sticky top-0 z-30 mobile-header">
+        <button id="mobile-menu-toggle" class="p-2 rounded-md hover:bg-slate-800/50 transition-colors mr-4" aria-label="Open menu" aria-expanded="false" style="-webkit-tap-highlight-color: rgba(255,255,255,0.1); touch-action: manipulation; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;">
           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">
             <path d="M4 6h16M4 12h16M4 18h16" stroke="white" stroke-width="2" stroke-linecap="round"/>
           </svg>
@@ -366,7 +398,6 @@
           <img src="{{ url_for('static', filename='favicons/android-chrome-192x192.png') }}" alt="CNT Logo" class="w-8 h-8 rounded-lg">
           <span class="text-lg font-semibold">Trading Journal</span>
         </div>
-        <div class="w-10"></div> <!-- Spacer for centering -->
       </header>
       
       <!-- Flash Messages (will be converted to toasts) -->
@@ -386,7 +417,7 @@
         </div>
       </main>
 
-      <footer class="text-xs muted px-3 sm:px-6 py-4 border-t border-slate-800 bg-[color:var(--card)]">
+      <footer class="hidden md:block text-xs muted px-3 sm:px-6 py-4 border-t border-slate-800 bg-[color:var(--card)]">
         <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
           <div>© <span id="year"></span> Trading Journal</div>
           <div class="text-center sm:text-right">Track • Reflect • Improve</div>

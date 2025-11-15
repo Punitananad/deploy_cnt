@@ -182,12 +182,6 @@
                     <a href="{{ url_for('mentor.coupons') }}" class="btn btn-primary">
                         <i class="fas fa-share me-2"></i>Share Coupons
                     </a>
-                    <button class="btn btn-outline-success" onclick="generateReport()">
-                        <i class="fas fa-download me-2"></i>Download Report
-                    </button>
-                    <button class="btn btn-outline-info" onclick="viewAnalytics()">
-                        <i class="fas fa-chart-bar me-2"></i>View Analytics
-                    </button>
                     <button class="btn btn-outline-warning" onclick="contactSupport()">
                         <i class="fas fa-headset me-2"></i>Contact Support
                     </button>
@@ -460,16 +454,8 @@ function refreshDashboard() {
     location.reload();
 }
 
-function generateReport() {
-    alert('Generating comprehensive report... This feature will download your performance data.');
-}
-
-function viewAnalytics() {
-    alert('Advanced analytics view coming soon! Track detailed performance metrics.');
-}
-
 function contactSupport() {
-    window.open('mailto:support@calculatentrade.com?subject=Mentor Support Request', '_blank');
+    alert('For support, please contact us at: punitanand146@gmail.com');
 }
 
 function exportStudents() {

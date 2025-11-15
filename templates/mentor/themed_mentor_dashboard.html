@@ -619,12 +619,6 @@ h1, h2, h3, h4, h5, h6, p, span, div, a, li, td, th {
                         <a href="{{ url_for('mentor.coupons') }}" class="btn quick-action-btn">
                             <i class="fas fa-share me-2"></i>Share Coupons
                         </a>
-                        <button class="btn quick-action-btn" onclick="generateReport()">
-                            <i class="fas fa-download me-2"></i>Download Report
-                        </button>
-                        <button class="btn quick-action-btn" onclick="viewAnalytics()">
-                            <i class="fas fa-chart-bar me-2"></i>View Analytics
-                        </button>
                         <button class="btn quick-action-btn" onclick="contactSupport()">
                             <i class="fas fa-headset me-2"></i>Contact Support
                         </button>
@@ -950,26 +944,8 @@ function refreshDashboard() {
     location.reload();
 }
 
-function generateReport() {
-    // Simulate report generation
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
-    btn.disabled = true;
-    
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        alert('Report generated successfully! Download will start shortly.');
-    }, 2000);
-}
-
-function viewAnalytics() {
-    alert('Opening advanced analytics dashboard...');
-}
-
 function contactSupport() {
-    window.open('mailto:support@calculatentrade.com?subject=Mentor Support Request', '_blank');
+    alert('For support, please contact us at: punitanand146@gmail.com');
 }
 
 function exportStudents() {

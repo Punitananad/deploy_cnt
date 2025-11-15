@@ -91,11 +91,26 @@ def login():
         mentor_id = request.form['mentor_id'].strip()
         password = request.form['password'].strip()
         
+        # Try to initialize mentor system if not available
+        global db, Mentor, Student, MentorCoupon, Coupon
         if Mentor is None:
-            flash('Mentor system not available. Please contact admin.')
-            return render_template('mentor/mentor_login.html')
+            try:
+                from flask import current_app
+                db = current_app.extensions['sqlalchemy']
+                Mentor, Student, MentorCoupon = create_models(db)
+                Coupon = MentorCoupon
+                print("Mentor system initialized on-demand")
+            except Exception as e:
+                print(f"Failed to initialize mentor system: {e}")
+                flash('Mentor system not available. Please contact admin.')
+                return render_template('mentor/mentor_login.html')
         
         try:
+            # Double-check mentor system is available
+            if Mentor is None:
+                flash('Mentor system initialization failed. Please contact admin.')
+                return render_template('mentor/mentor_login.html')
+                
             mentor = Mentor.query.filter_by(mentor_id=mentor_id).first()
             
             if mentor and mentor.active and check_password_hash(mentor.password_hash, password):
@@ -412,7 +427,19 @@ def init_mentor_db(app_db):
         # Tables will be created in the current app context
         db.create_all()
         print("Mentor PostgreSQL database models created successfully")
+        
+        # Verify models are set
+        if Mentor is not None:
+            print(f"Mentor model initialized: {Mentor.__name__}")
+        else:
+            print("WARNING: Mentor model is still None after initialization")
+            
     except Exception as e:
         print(f"Error creating mentor models: {e}")
         # Create simplified models without relationships if there are conflicts
-        create_simple_models(db)
+        try:
+            Mentor, Student, MentorCoupon = create_simple_models(db)
+            Coupon = MentorCoupon
+            print("Fallback to simple mentor models")
+        except Exception as e2:
+            print(f"Fallback also failed: {e2}")

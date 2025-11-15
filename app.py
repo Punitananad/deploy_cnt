@@ -140,7 +140,7 @@ if os.getenv('FLASK_ENV') == 'production':
 
 db.init_app(app)
 
-
+# Blueprints will be registered later to avoid conflicts
 
 login_manager = LoginManager()
 login_manager.login_view = "login"   # route name of your login view
@@ -219,6 +219,13 @@ def init_app_database():
             print("Mentor database initialized successfully")
         except Exception as e:
             print(f"Error initializing mentor database: {e}")
+            # Try to initialize mentor system anyway
+            try:
+                from mentor import create_models
+                create_models(db)
+                print("Mentor models created as fallback")
+            except Exception as e2:
+                print(f"Fallback mentor initialization also failed: {e2}")
         
         try:
             init_subscription_plans()
