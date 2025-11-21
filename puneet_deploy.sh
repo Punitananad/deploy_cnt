@@ -42,19 +42,38 @@ else
 fi
 echo ""
 
-# Step 4: Restart Gunicorn
-echo "🔄 Restarting Gunicorn..."
-sudo systemctl restart gunicorn
+# Step 4: Stop existing Gunicorn processes
+echo "🔄 Stopping Gunicorn processes..."
+pkill -f gunicorn
+sleep 2
 
-if [ $? -eq 0 ]; then
-    echo "✅ Gunicorn restarted successfully"
+if pgrep -f gunicorn > /dev/null; then
+    echo "⚠️  Force killing remaining Gunicorn processes..."
+    pkill -9 -f gunicorn
+    sleep 1
+fi
+
+echo "✅ Gunicorn processes stopped"
+echo ""
+
+# Step 5: Start Gunicorn
+echo "🚀 Starting Gunicorn..."
+cd ~/deploy_cnt
+source venv/bin/activate
+nohup gunicorn -c gunicorn_config.py app:app > logs/gunicorn.log 2>&1 &
+
+sleep 3
+
+if pgrep -f gunicorn > /dev/null; then
+    echo "✅ Gunicorn started successfully"
 else
-    echo "❌ Failed to restart Gunicorn"
+    echo "❌ Failed to start Gunicorn"
+    echo "Check logs/gunicorn.log for errors"
     exit 1
 fi
 echo ""
 
-# Step 5: Restart Nginx
+# Step 6: Restart Nginx
 echo "🔄 Restarting Nginx..."
 sudo systemctl restart nginx
 
@@ -66,14 +85,15 @@ else
 fi
 echo ""
 
-# Step 6: Verify services are running
+# Step 7: Verify services are running
 echo "🔍 Verifying services..."
 sleep 2
 
-if systemctl is-active --quiet gunicorn; then
-    echo "✅ Gunicorn is active and running"
+if pgrep -f gunicorn > /dev/null; then
+    GUNICORN_PID=$(pgrep -f gunicorn | head -1)
+    echo "✅ Gunicorn is running (PID: $GUNICORN_PID)"
 else
-    echo "❌ Gunicorn failed to start"
+    echo "❌ Gunicorn is not running"
 fi
 
 if systemctl is-active --quiet nginx; then
