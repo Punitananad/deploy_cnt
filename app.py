@@ -5982,21 +5982,6 @@ def create_app():
     """Application factory for production deployment"""
     return app
 
-# Health check endpoint for load balancer
-@app.route('/health')
-def health_check():
-    """Health check endpoint for monitoring"""
-    try:
-        from production_db_config import get_database_health_check
-        db_health = get_database_health_check()
-        
-        if db_health['connected']:
-            return {'status': 'healthy', 'database': 'connected'}, 200
-        else:
-            return {'status': 'unhealthy', 'database': 'disconnected'}, 503
-    except Exception as e:
-        return {'status': 'unhealthy', 'error': str(e)}, 503
-
 # Initialize production optimizations
 if os.getenv('FLASK_ENV') == 'production':
     try:
