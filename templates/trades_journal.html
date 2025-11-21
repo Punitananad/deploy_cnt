@@ -18,11 +18,18 @@
   }
   
   .stat-card {
-    background: var(--card);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     border: 1px solid #334155;
     border-radius: 0.75rem;
     padding: 1.5rem;
     text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(14, 165, 164, 0.2);
   }
   
   .stat-value {
@@ -62,10 +69,11 @@
   }
   
   .filter-card {
-    background: var(--card);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     border: 1px solid #334155;
     border-radius: 0.75rem;
     padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   
   .broker-card {
@@ -88,10 +96,11 @@
   }
   
   .table-container {
-    background: var(--card);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     border: 1px solid #334155;
     border-radius: 0.75rem;
     overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   
   .table-dark {
@@ -125,12 +134,29 @@
     background: var(--accent);
     border-color: var(--accent);
     color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(14, 165, 164, 0.3);
   }
   
   .btn-accent:hover {
     background: var(--accent-2);
     border-color: var(--accent-2);
     color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(14, 165, 164, 0.4);
+  }
+  
+  /* Add smooth transitions to all buttons */
+  button, .btn, a.inline-flex {
+    transition: all 0.3s ease;
+  }
+  
+  button:hover, .btn:hover, a.inline-flex:hover {
+    transform: translateY(-1px);
+  }
+  
+  button:active, .btn:active, a.inline-flex:active {
+    transform: translateY(0);
   }
   
   .form-control, .form-select {
@@ -150,11 +176,12 @@
   .loss { color: #ef4444; font-weight: 600; }
   
   .chart-container {
-    background: var(--card);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     border: 1px solid #334155;
     border-radius: 0.75rem;
     padding: 1.5rem;
     height: 400px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   
   .no-data-state {
@@ -204,14 +231,14 @@
   /* Mobile Responsive Styles */
   @media (max-width: 768px) {
     .space-y-6 {
-      padding: 0;
+      padding: 0.75rem;
       max-width: 100vw;
     }
     
     .container, .max-w-7xl, .max-w-6xl, .max-w-5xl, .max-w-4xl {
       max-width: 100% !important;
-      padding-left: 0.5rem !important;
-      padding-right: 0.5rem !important;
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
     }
     
     .space-y-4 > * + * {
@@ -220,21 +247,22 @@
     
     .stats-grid {
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.5rem;
+      gap: 0.75rem;
       margin: 0;
     }
     
     .stat-card {
-      padding: 0.75rem;
+      padding: 1rem;
       border-radius: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     
     .stat-value {
-      font-size: 0.75rem;
+      font-size: 1.25rem;
     }
     
     .stat-label {
-      font-size: 0.6rem;
+      font-size: 0.75rem;
     }
     
     .grid.grid-cols-1.lg\:grid-cols-2 {
@@ -242,51 +270,56 @@
     }
     
     .chart-container {
-      height: 200px;
-      padding: 0.75rem;
+      height: 250px;
+      padding: 1rem;
       margin: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     
     .table-container {
       overflow-x: auto;
-      margin: 0;
-      border-radius: 0.5rem;
+      margin: 0 -0.75rem;
+      border-radius: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     
     .table-dark {
-      min-width: 800px;
+      min-width: 100%;
     }
     
     .filter-card {
-      padding: 0.75rem;
+      padding: 1rem;
       margin: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     
     .grid.grid-cols-1.md\:grid-cols-4 {
       grid-template-columns: 1fr;
-      gap: 0.3rem;
+      gap: 0.75rem;
     }
     
     .grid.grid-cols-1.md\:grid-cols-4 label {
-      font-size: 0.65rem;
-      margin-bottom: 0.25rem;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
     }
     
     .form-control, .form-select {
-      padding: 0.3rem 0.4rem;
-      font-size: 0.7rem;
-      min-height: 28px;
+      padding: 0.625rem 0.75rem;
+      font-size: 0.875rem;
+      min-height: 42px;
+      border-radius: 0.5rem;
     }
     
     /* Header mobile fixes */
     .flex.items-center.gap-3 {
-      gap: 0.25rem;
-      padding: 0 0.1rem;
+      gap: 0.75rem;
+      padding: 0;
     }
     
     .text-xl {
-      font-size: 0.85rem;
-      line-height: 1rem;
+      font-size: 1.25rem;
+      line-height: 1.75rem;
     }
     
     .min-w-0.flex-1 {
@@ -296,12 +329,13 @@
     
     /* Button improvements */
     .grid.grid-cols-2.gap-2 {
-      gap: 0.15rem;
-      margin: 0 -0.1rem;
+      gap: 0.5rem;
+      margin: 0;
     }
     
     .px-3.py-2\.5 {
-      padding: 0.625rem 0.75rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
     }
     
     /* Mobile table view */
@@ -312,17 +346,19 @@
     .table-dark tbody tr {
       display: block;
       border: 1px solid #334155;
-      border-radius: 0.5rem;
-      margin-bottom: 0.875rem;
-      padding: 0.875rem;
-      background: var(--card);
+      border-radius: 0.75rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     
     .table-dark tbody td {
       display: block;
       text-align: left !important;
       border: none;
-      padding: 0.25rem 0;
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
     }
     
     .table-dark tbody td:before {
@@ -330,7 +366,7 @@
       font-weight: 600;
       color: var(--accent);
       display: inline-block;
-      min-width: 80px;
+      min-width: 100px;
     }
     
     /* Mobile modal adjustments */
@@ -375,42 +411,44 @@
     /* Mobile action buttons in table */
     .table-dark tbody td .flex.gap-1 {
       flex-wrap: wrap;
-      gap: 0.375rem;
+      gap: 0.5rem;
       justify-content: flex-start;
+      margin-top: 0.5rem;
     }
     
     .table-dark tbody td button {
-      min-width: 32px;
-      height: 32px;
+      min-width: 40px;
+      height: 40px;
+      border-radius: 0.5rem;
     }
   }
   
   @media (max-width: 480px) {
     .space-y-6 {
-      padding: 0 0.5rem;
+      padding: 0.5rem;
     }
     
     .stats-grid {
       grid-template-columns: 1fr;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
     
     .analytics-grid {
       grid-template-columns: 1fr;
-      gap: 0.375rem;
+      gap: 0.5rem;
     }
     
     .stat-card {
-      padding: 0.75rem;
+      padding: 1rem;
     }
     
     .stat-value {
-      font-size: 1.125rem;
+      font-size: 1.5rem;
     }
     
     .chart-container {
-      height: 220px;
-      padding: 0.625rem;
+      height: 280px;
+      padding: 1rem;
     }
     
     .text-xl {
@@ -419,17 +457,17 @@
     }
     
     .filter-card {
-      padding: 0.75rem;
+      padding: 1rem;
     }
     
     /* Smaller buttons on very small screens */
     .px-3.py-2\.5 {
-      padding: 0.5rem 0.625rem;
-      font-size: 0.8125rem;
+      padding: 0.625rem 0.875rem;
+      font-size: 0.875rem;
     }
     
     .w-full.inline-flex {
-      padding: 0.625rem 1rem;
+      padding: 0.75rem 1rem;
     }
     
     /* Table container full width on small screens */
@@ -438,13 +476,13 @@
     }
     
     .table-dark tbody tr {
-      margin-bottom: 0.75rem;
-      padding: 0.75rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
     }
     
     /* Modal adjustments for very small screens */
     .max-w-2xl, .max-w-4xl, .max-w-5xl {
-      max-width: 98vw;
+      max-width: 95vw;
       margin: 0.5rem;
     }
   }
@@ -524,162 +562,152 @@
     margin-bottom: 0.5rem !important;
   }
 
-  /* === Enhanced Ultra-Compact Mobile Optimizations === */
+  /* === Enhanced Mobile Optimizations === */
   @media (max-width: 768px) {
-    /* Ultra-compact action buttons */
+    /* Mobile action buttons - keep text visible */
     .md\:hidden .grid.grid-cols-2 button,
     .md\:hidden .grid.grid-cols-3 button,
     .md\:hidden a.w-full.inline-flex {
-      padding: 0.2rem 0.3rem !important;
-      min-height: 24px !important;
-      font-size: 0.6rem !important;
-      gap: 0.1rem !important;
-      border-radius: 0.25rem !important;
+      padding: 0.75rem 1rem !important;
+      min-height: 44px !important;
+      font-size: 0.875rem !important;
+      gap: 0.5rem !important;
+      border-radius: 0.5rem !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    /* Hide button text, show only icons on mobile */
+    /* Keep button text visible on mobile */
     .md\:hidden .grid.grid-cols-2 button span,
     .md\:hidden .grid.grid-cols-3 button span,
     .md\:hidden a.w-full.inline-flex span {
-      display: none !important;
-    }
-    
-    .md\:hidden .grid.grid-cols-2 button,
-    .md\:hidden .grid.grid-cols-3 button,
-    .md\:hidden a.w-full.inline-flex {
-      min-width: 28px !important;
-      padding: 0.25rem !important;
-      justify-content: center !important;
+      display: inline !important;
     }
     
     .md\:hidden .grid.grid-cols-2 button svg,
     .md\:hidden .grid.grid-cols-3 button svg,
     .md\:hidden a.w-full.inline-flex svg {
-      margin-right: 0 !important;
-      width: 12px !important;
-      height: 12px !important;
+      margin-right: 0.5rem !important;
+      width: 16px !important;
+      height: 16px !important;
     }
 
-    /* Compact header */
+    /* Better header spacing */
     .flex.items-center.gap-3 {
-      gap: 0.5rem !important;
+      gap: 0.75rem !important;
     }
 
     .text-xl {
-      font-size: 1rem !important;
-      line-height: 1.2rem !important;
+      font-size: 1.25rem !important;
+      line-height: 1.75rem !important;
     }
 
-    /* Smaller back button */
+    /* Better back button */
     .flex-shrink-0.inline-flex.items-center.gap-2 {
-      padding: 0.25rem 0.4rem !important;
-      min-height: 28px !important;
-      font-size: 0.7rem !important;
+      padding: 0.5rem 0.75rem !important;
+      min-height: 40px !important;
+      font-size: 0.875rem !important;
     }
 
     .flex-shrink-0.inline-flex.items-center.gap-2 svg {
-      width: 12px !important;
-      height: 12px !important;
+      width: 16px !important;
+      height: 16px !important;
     }
 
-    /* Ultra-compact table action buttons */
+    /* Better table action buttons */
     .table-dark tbody td .flex.gap-1 button {
-      min-width: 24px !important;
-      min-height: 24px !important;
-      padding: 0.15rem !important;
+      min-width: 40px !important;
+      min-height: 40px !important;
+      padding: 0.5rem !important;
     }
 
     .table-dark tbody td .flex.gap-1 button svg {
-      width: 10px !important;
-      height: 10px !important;
+      width: 16px !important;
+      height: 16px !important;
     }
 
-    /* Compact filter section */
+    /* Better filter section */
     .filter-card {
-      padding: 0.75rem !important;
+      padding: 1rem !important;
     }
 
     .grid.grid-cols-1.md\:grid-cols-4 {
-      gap: 0.5rem !important;
+      gap: 0.75rem !important;
     }
 
     .grid.grid-cols-1.md\:grid-cols-4 > div {
-      margin-bottom: 0.25rem !important;
-    }
-
-    /* Smaller filter buttons */
-    .md\:hidden.grid.grid-cols-3 {
-      gap: 0.2rem !important;
-    }
-
-    .md\:hidden.grid.grid-cols-3 button {
-      padding: 0.25rem 0.3rem !important;
-      font-size: 0.6rem !important;
-      min-height: 24px !important;
-    }
-
-    .md\:hidden.grid.grid-cols-3 button svg {
-      width: 10px !important;
-      height: 10px !important;
-      margin-right: 0.15rem !important;
-    }
-
-    /* Compact stats cards */
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr) !important;
-      gap: 0.5rem !important;
-    }
-
-    .stat-card {
-      padding: 0.6rem !important;
-    }
-
-    .stat-value {
-      font-size: 0.9rem !important;
-      margin-bottom: 0.25rem !important;
-    }
-
-    .stat-label {
-      font-size: 0.7rem !important;
-    }
-
-    /* Smaller chart containers */
-    .chart-container {
-      height: 160px !important;
-      padding: 0.6rem !important;
-    }
-
-    /* Compact table */
-    .table-dark tbody tr {
-      padding: 0.5rem !important;
       margin-bottom: 0.5rem !important;
     }
 
-    .table-dark tbody td {
-      padding: 0.15rem 0 !important;
+    /* Better filter buttons */
+    .md\:hidden.grid.grid-cols-3 {
+      gap: 0.5rem !important;
+    }
+
+    .md\:hidden.grid.grid-cols-3 button {
+      padding: 0.75rem 1rem !important;
+      font-size: 0.875rem !important;
+      min-height: 44px !important;
+    }
+
+    .md\:hidden.grid.grid-cols-3 button svg {
+      width: 16px !important;
+      height: 16px !important;
+      margin-right: 0.5rem !important;
+    }
+
+    /* Beautiful stats cards */
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 0.75rem !important;
+    }
+
+    .stat-card {
+      padding: 1rem !important;
+    }
+
+    .stat-value {
+      font-size: 1.25rem !important;
+      margin-bottom: 0.5rem !important;
+    }
+
+    .stat-label {
       font-size: 0.75rem !important;
     }
 
-    /* Reduce overall page padding */
-    .space-y-6 {
-      padding: 0 0.5rem !important;
+    /* Better chart containers */
+    .chart-container {
+      height: 250px !important;
+      padding: 1rem !important;
     }
 
-    /* Compact modal buttons */
+    /* Better table layout */
+    .table-dark tbody tr {
+      padding: 1rem !important;
+      margin-bottom: 1rem !important;
+    }
+
+    .table-dark tbody td {
+      padding: 0.5rem 0 !important;
+      font-size: 0.875rem !important;
+    }
+
+    /* Better page padding */
+    .space-y-6 {
+      padding: 0.75rem !important;
+    }
+
+    /* Better modal buttons */
     .max-w-2xl .flex.justify-end.gap-2 button,
     .max-w-4xl .flex.justify-end.gap-2 button,
     .max-w-5xl .flex.justify-end.gap-2 button {
-      padding: 0.4rem 0.8rem !important;
-      font-size: 0.75rem !important;
-      min-height: 32px !important;
+      padding: 0.625rem 1rem !important;
+      font-size: 0.875rem !important;
+      min-height: 40px !important;
     }
 
-    /* Hide low priority table columns */
-    .table-dark td[data-label="Entry"],
-    .table-dark td[data-label="Exit"],
-    .table-dark td[data-label="Quantity"],
+    /* Show important table data on mobile */
     .table-dark td[data-label="Strategy"] {
-      display: none !important;
+      display: block !important;
     }
   }
 
@@ -687,69 +715,60 @@
   @media (max-width: 360px) {
     .stats-grid {
       grid-template-columns: 1fr !important;
-      gap: 0.3rem !important;
+      gap: 0.5rem !important;
     }
 
     .stat-card {
-      padding: 0.4rem !important;
+      padding: 0.875rem !important;
     }
 
     .stat-value {
-      font-size: 0.8rem !important;
+      font-size: 1.125rem !important;
     }
 
     .space-y-6 {
-      padding: 0 0.3rem !important;
+      padding: 0.5rem !important;
     }
 
-    /* Even more compact buttons */
+    /* Maintain readable buttons */
     .md\:hidden .grid.grid-cols-2 button,
     .md\:hidden .grid.grid-cols-3 button {
-      min-height: 22px !important;
-      padding: 0.15rem 0.2rem !important;
-      font-size: 0.55rem !important;
+      min-height: 40px !important;
+      padding: 0.625rem 0.875rem !important;
+      font-size: 0.8125rem !important;
     }
 
     .md\:hidden .grid.grid-cols-2 button svg,
     .md\:hidden .grid.grid-cols-3 button svg {
-      width: 10px !important;
-      height: 10px !important;
-      margin-right: 0 !important;
+      width: 14px !important;
+      height: 14px !important;
+      margin-right: 0.375rem !important;
     }
 
-
+    /* Stack buttons vertically on very small screens */
+    .md\:hidden .grid.grid-cols-2,
+    .md\:hidden .grid.grid-cols-3 {
+      grid-template-columns: 1fr !important;
+    }
   }
 
-  /* Ultra-compact table for very small screens */
+  /* Maintain readability on smallest screens */
   @media (max-width: 320px) {
-    .table-dark tbody td[data-label="Strategy"],
-    .table-dark tbody td[data-label="Quantity"] {
-      display: none !important;
-    }
-
     .table-dark tbody tr {
-      padding: 0.3rem !important;
+      padding: 0.875rem !important;
     }
 
     .table-dark tbody td {
-      font-size: 0.65rem !important;
+      font-size: 0.8125rem !important;
     }
 
-    /* Ultra-compact buttons for very small screens */
-    .md\:hidden .grid.grid-cols-2 button,
-    .md\:hidden .grid.grid-cols-3 button {
-      min-height: 20px !important;
-      padding: 0.1rem 0.15rem !important;
-      font-size: 0.5rem !important;
+    .stat-value {
+      font-size: 1rem !important;
     }
 
-    .md\:hidden .grid.grid-cols-2 button svg,
-    .md\:hidden .grid.grid-cols-3 button svg {
-      width: 8px !important;
-      height: 8px !important;
+    .chart-container {
+      height: 220px !important;
     }
-
-
   }
 
 
@@ -799,26 +818,26 @@
     </div>
     
     <!-- Mobile buttons -->
-    <div class="md:hidden space-y-2">
-      <div class="grid grid-cols-2 gap-2">
-        <button id="show-advanced-analytics-mobile" class="px-3 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-medium flex items-center justify-center hover:bg-purple-700 transition-colors">
-          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <div class="md:hidden space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <button id="show-advanced-analytics-mobile" class="px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm font-medium flex items-center justify-center hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
           </svg>
-          Analytics
+          <span>Analytics</span>
         </button>
-        <button data-action="add-trade-via-broker" class="px-3 py-2.5 bg-teal-600 text-white rounded-lg text-sm font-medium flex items-center justify-center hover:bg-teal-700 transition-colors">
-          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <button data-action="add-trade-via-broker" class="px-4 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg text-sm font-medium flex items-center justify-center hover:from-teal-700 hover:to-cyan-700 transition-all shadow-lg">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
           </svg>
-          Via Broker
+          <span>Via Broker</span>
         </button>
       </div>
-      <a href="{{ url_for('calculatentrade.trade_form') }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <a href="{{ url_for('calculatentrade.trade_form') }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg text-sm font-medium hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M12 4v16m8-8H4"/>
         </svg>
-        Add Trade Manually
+        <span>Add Trade Manually</span>
       </a>
     </div>
   </div>
@@ -1066,24 +1085,24 @@
     </div>
     
     <!-- Mobile filter buttons -->
-    <div class="md:hidden grid grid-cols-3 gap-2">
-      <button id="apply-filters-mobile" class="px-2 py-2 bg-teal-600 text-white rounded text-sm flex items-center justify-center">
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <div class="md:hidden grid grid-cols-3 gap-3">
+      <button id="apply-filters-mobile" class="px-3 py-3 bg-teal-600 text-white rounded-lg text-sm font-medium flex items-center justify-center hover:bg-teal-700 transition-all shadow-md">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
         </svg>
-        Apply
+        <span>Apply</span>
       </button>
-      <button id="reset-filters-mobile" class="px-2 py-2 bg-slate-600 text-white rounded text-sm flex items-center justify-center">
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <button id="reset-filters-mobile" class="px-3 py-3 bg-slate-600 text-white rounded-lg text-sm font-medium flex items-center justify-center hover:bg-slate-700 transition-all shadow-md">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
         </svg>
-        Reset
+        <span>Reset</span>
       </button>
-      <button id="export-csv-mobile" class="px-2 py-2 bg-emerald-600 text-white rounded text-sm flex items-center justify-center">
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <button id="export-csv-mobile" class="px-3 py-3 bg-emerald-600 text-white rounded-lg text-sm font-medium flex items-center justify-center hover:bg-emerald-700 transition-all shadow-md">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
         </svg>
-        Export
+        <span>Export</span>
       </button>
     </div>
   </div>
@@ -1664,10 +1683,10 @@ $(document).ready(function() {
     
     function loadAdvancedAnalytics() {
         // Only load real data from backend - no dummy data
-        const totalPnl = {{ total_pnl if total_pnl else 0 }};
-        const totalTrades = {{ total_trades if total_trades else 0 }};
-        const winningTrades = {{ winning_trades if winning_trades else 0 }};
-        const losingTrades = {{ losing_trades if losing_trades else 0 }};
+        const totalPnl = {{ total_pnl|default(0) }};
+        const totalTrades = {{ total_trades|default(0) }};
+        const winningTrades = {{ winning_trades|default(0) }};
+        const losingTrades = {{ losing_trades|default(0) }};
         
         if (totalTrades === 0) {
             return; // No data to display
@@ -1995,10 +2014,10 @@ $(document).ready(function() {
     
     function calculateAdvancedMetrics() {
         // Only show real data from backend
-        const totalPnl = {{ total_pnl if total_pnl else 0 }};
-        const totalTrades = {{ total_trades if total_trades else 0 }};
-        const winningTrades = {{ winning_trades if winning_trades else 0 }};
-        const losingTrades = {{ losing_trades if losing_trades else 0 }};
+        const totalPnl = {{ total_pnl|default(0) }};
+        const totalTrades = {{ total_trades|default(0) }};
+        const winningTrades = {{ winning_trades|default(0) }};
+        const losingTrades = {{ losing_trades|default(0) }};
         
         if (totalTrades === 0) {
             // Show no data message
@@ -2203,9 +2222,9 @@ $(document).ready(function() {
         // Initialize Win/Loss Chart
         const winLossCtx = document.getElementById('winLossChart');
         if (winLossCtx) {
-            const wins = {{ winning_trades if winning_trades else 0 }};
-            const losses = {{ losing_trades if losing_trades else 0 }};
-            const total = {{ total_trades if total_trades else 0 }};
+            const wins = {{ winning_trades|default(0) }};
+            const losses = {{ losing_trades|default(0) }};
+            const total = {{ total_trades|default(0) }};
             const breakeven = Math.max(0, total - wins - losses);
             
             winLossChart = new Chart(winLossCtx, {

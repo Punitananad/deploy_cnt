@@ -54,17 +54,22 @@
     /* Mobile Responsive Styles */
     @media (max-width: 767px) {
       .sidebar { 
-        position: fixed; 
+        position: fixed !important; 
         left: 0; 
         top: 0; 
         bottom: 0; 
         z-index: 50; 
         transform: translateX(-100%); 
-        transition: transform 0.3s ease; 
-        width: 280px;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        width: 280px !important;
+        max-width: 85vw;
         overflow-y: auto;
+        display: block !important;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
       }
-      .sidebar.show { transform: translateX(0); }
+      .sidebar.show { 
+        transform: translateX(0) !important; 
+      }
       .mobile-header-menu { display: inline-flex; }
       .main-content { padding: 1rem; }
       .stat-tile { padding: 0.75rem; }
@@ -76,6 +81,13 @@
         background: rgba(0,0,0,0.7); 
         z-index: 40; 
         backdrop-filter: blur(2px);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+      .mobile-overlay.show {
+        opacity: 1;
+        pointer-events: auto;
       }
       .mobile-header {
         position: sticky;
@@ -93,6 +105,11 @@
       #mobile-sidebar { display: none !important; }
       .mobile-header-menu { display: none; }
       .mobile-overlay { display: none !important; }
+      .sidebar {
+        position: sticky !important;
+        transform: none !important;
+        display: block !important;
+      }
     }
     
     @media (max-width: 480px) {
@@ -121,7 +138,7 @@
     <div id="mobile-overlay" class="mobile-overlay hidden md:hidden"></div>
     
     <!-- Sidebar-->
-    <aside id="sidebar" class="w-72 bg-[color:var(--card)] border-r border-slate-800 p-4 hidden md:block sticky top-0 h-screen overflow-y-auto sidebar" aria-label="Main sidebar">
+    <aside id="sidebar" class="w-72 bg-[color:var(--card)] border-r border-slate-800 p-4 md:block sticky top-0 h-screen overflow-y-auto sidebar" aria-label="Main sidebar" style="display: none;">
       
       <div class="mb-6 flex items-center gap-3 profile-snippet">
         <img src="{{ url_for('static', filename='favicons/android-chrome-192x192.png') }}" alt="CNT Logo" class="w-10 h-10 rounded-lg">
@@ -382,12 +399,13 @@
       
       // Function to open mobile sidebar
       function openMobileSidebar() {
+        console.log('Opening mobile sidebar');
         if(sidebar) {
-          sidebar.classList.remove('hidden');
           sidebar.classList.add('show');
         }
         if(mobileOverlay) {
           mobileOverlay.classList.remove('hidden');
+          mobileOverlay.classList.add('show');
         }
         if(mobileToggle) {
           mobileToggle.setAttribute('aria-expanded', 'true');
@@ -397,15 +415,18 @@
       
       // Function to close mobile sidebar
       function closeMobileSidebar() {
+        console.log('Closing mobile sidebar');
         if(sidebar) {
           sidebar.classList.remove('show');
-          // Only hide on mobile, keep visible on desktop
-          if(window.innerWidth < 768) {
-            sidebar.classList.add('hidden');
-          }
         }
         if(mobileOverlay) {
-          mobileOverlay.classList.add('hidden');
+          mobileOverlay.classList.remove('show');
+          // Wait for transition to complete before hiding
+          setTimeout(() => {
+            if(mobileOverlay && !mobileOverlay.classList.contains('show')) {
+              mobileOverlay.classList.add('hidden');
+            }
+          }, 300);
         }
         if(mobileToggle) {
           mobileToggle.setAttribute('aria-expanded', 'false');
@@ -415,7 +436,10 @@
       
       // Toggle sidebar when menu button is clicked
       if(mobileToggle) {
-        mobileToggle.addEventListener('click', function() {
+        mobileToggle.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Menu toggle clicked');
           if(sidebar && sidebar.classList.contains('show')) {
             closeMobileSidebar();
           } else {
@@ -426,7 +450,11 @@
       
       // Close sidebar when overlay is clicked
       if(mobileOverlay) {
-        mobileOverlay.addEventListener('click', closeMobileSidebar);
+        mobileOverlay.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeMobileSidebar();
+        });
       }
       
       // Close sidebar when clicking on a link (mobile only)
@@ -435,7 +463,7 @@
         sidebarLinks.forEach(link => {
           link.addEventListener('click', function() {
             if(window.innerWidth < 768) {
-              closeMobileSidebar();
+              setTimeout(() => closeMobileSidebar(), 100);
             }
           });
         });
@@ -443,34 +471,57 @@
       
       // Close sidebar when pressing Escape key
       document.addEventListener('keydown', function(e) {
-        if(e.key === 'Escape') {
+        if(e.key === 'Escape' && sidebar && sidebar.classList.contains('show')) {
           closeMobileSidebar();
         }
       });
       
       // Handle window resize
+      let resizeTimer;
       window.addEventListener('resize', function() {
-        if(window.innerWidth >= 768) {
-          // On desktop, ensure sidebar is visible and not in mobile state
-          if(sidebar) {
-            sidebar.classList.remove('hidden', 'show');
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+          if(window.innerWidth >= 768) {
+            // On desktop, ensure sidebar is visible and not in mobile state
+            if(sidebar) {
+              sidebar.classList.remove('show');
+            }
+            if(mobileOverlay) {
+              mobileOverlay.classList.remove('show');
+              mobileOverlay.classList.add('hidden');
+            }
+            document.body.style.overflow = '';
           }
-          if(mobileOverlay) {
-            mobileOverlay.classList.add('hidden');
-          }
-          document.body.style.overflow = '';
-        } else {
-          // On mobile, ensure sidebar is hidden by default
-          if(sidebar && !sidebar.classList.contains('show')) {
-            sidebar.classList.add('hidden');
-          }
-        }
+        }, 250);
       });
       
-      // Initialize sidebar state on load
-      if(window.innerWidth < 768 && sidebar) {
-        sidebar.classList.add('hidden');
+      // Initialize - ensure overlay is hidden on load and sidebar is properly set
+      if(mobileOverlay) {
+        mobileOverlay.classList.add('hidden');
       }
+      
+      // Initialize sidebar visibility based on screen size
+      function initSidebar() {
+        if(window.innerWidth >= 768) {
+          // Desktop: show sidebar
+          if(sidebar) {
+            sidebar.style.display = 'block';
+            sidebar.classList.remove('show');
+          }
+        } else {
+          // Mobile: hide sidebar initially
+          if(sidebar) {
+            sidebar.style.display = 'block';
+            sidebar.classList.remove('show');
+          }
+        }
+      }
+      
+      // Run on load
+      initSidebar();
+      
+      // Run on resize
+      window.addEventListener('resize', initSidebar);
     })();
 
     // Desktop Sidebar Collapse Functionality

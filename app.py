@@ -46,7 +46,6 @@ from mentor import mentor_bp, init_mentor_db
 from subscription_admin import subscription_admin_bp
 from subscription_models import init_subscription_plans, get_user_active_subscription, create_user_subscription
 from broker_bp import broker_bp
-from debug_routes import debug_bp
 
 
 
@@ -205,13 +204,6 @@ except (ImportError, Exception):
         return {'connected': False}
 
 # Blueprint registration will be done after models are defined
-
-# Register debug blueprint for production troubleshooting
-try:
-    app.register_blueprint(debug_bp)
-    print("Debug routes registered")
-except Exception as e:
-    print(f"Failed to register debug routes: {e}")
 
 # Database initialization is handled by init_db.py
 # This ensures proper application context management
