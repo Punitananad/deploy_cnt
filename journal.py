@@ -258,7 +258,12 @@ class RuleStats(db.Model):
     rule_id = db.Column(db.Integer, db.ForeignKey('rule.id'), nullable=False)
     compliance_percentage = db.Column(db.Float, default=0.0)
     violations_count = db.Column(db.Integer, default=0)
-    last_violation_date = db.Column(db.DateTime)
+    last_violation_date = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship
+    rule = db.relationship('Rule', backref='stats')
     last_violation_example = db.Column(db.Text)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -876,8 +881,9 @@ def serve_mistake_attachment(filename):
     return send_from_directory(upload_folder, filename)
 
 # Debug route to check attachments
-@calculatentrade_bp.route('/debug/attachments/<int:mistake_id>')
-def debug_attachments(mistake_id):
+# PRODUCTION: Comment out debug route
+# @calculatentrade_bp.route('/debug/attachments/<int:mistake_id>')
+# def debug_attachments(mistake_id):
     mistake = Mistake.query.get_or_404(mistake_id)
     attachments = mistake.attachments.all()
     
@@ -1600,8 +1606,9 @@ def get_trades():
         'windows phone', 'opera mini', 'iemobile', 'wpdesktop'
     ])
     
+    # PRODUCTION: Comment out mobile testing override
     # Force mobile template for testing (remove this line in production)
-    is_mobile = True
+    # is_mobile = True
     
     # Choose template based on device type
     template = 'trades_journal.html' if is_mobile else 'trades_journal.html'
@@ -1679,11 +1686,10 @@ def api_get_trade(trade_id):
 def real_broker_connect():
     """Route to access multi-broker connect functionality"""
     try:
-        # Import multi-broker functions
-        from multi_broker_system import get_broker_session_status, USER_SESSIONS
+        from multi_broker_system import get_broker_session_status
         
         user_id = request.args.get('user_id', 'NES881')
-        connected_broker = request.args.get('connected')  # Check if just connected
+        connected_broker = request.args.get('connected')
         connected_brokers = []
         
         # Check all brokers for existing connections
@@ -1696,14 +1702,13 @@ def real_broker_connect():
                         'user_id': user_id,
                         'session_data': status.get('session_data', {})
                     })
-            except Exception as e:
-                safe_log_error(f"Error checking {broker} status: {e}")
+            except Exception:
                 continue
         
-        # If we just connected, show success message
+        # Success message if just connected
         success_message = None
         if connected_broker:
-            success_message = f"Successfully connected to {connected_broker.upper()}! You can now view your portfolio data."
+            success_message = f"Successfully connected to {connected_broker.upper()}!"
         
         return render_template('multi_broker_connect.html',
                              connected_brokers=connected_brokers,
@@ -1711,12 +1716,14 @@ def real_broker_connect():
                              user_id=user_id,
                              success_message=success_message,
                              now=datetime.now())
+                             
     except Exception as e:
-        safe_log_error(f"Error in real_broker_connect: {e}")
+        # Simple fallback - still render the template with empty data
         return render_template('multi_broker_connect.html',
                              connected_brokers=[],
                              has_connected_brokers=False,
                              user_id='NES881',
+                             success_message=None,
                              now=datetime.now())
 
 @calculatentrade_bp.route('/api/trades', methods=['POST'])

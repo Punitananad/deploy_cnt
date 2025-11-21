@@ -17,12 +17,25 @@
       --accent-2: #0369a1;
     }
   
-    html,body { height:100%; background:var(--bg); color: #e6eef6; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    html,body { 
+      height:100%; 
+      background:var(--bg); 
+      color: #e6eef6; 
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
+      overflow-x: hidden;
+    }
     a { color: var(--accent); }
    
-    .focus-ring:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(14,165,164,0.12); border-radius: .5rem; }
+    .focus-ring:focus-visible { 
+      outline: none; 
+      box-shadow: 0 0 0 4px rgba(14,165,164,0.12); 
+      border-radius: .5rem; 
+    }
     
-    .screenshot-placeholder { background: linear-gradient(135deg, rgba(14,165,164,0.04), rgba(2,6,23,0.55)); border: 1px dashed rgba(14,165,164,0.08); }
+    .screenshot-placeholder { 
+      background: linear-gradient(135deg, rgba(14,165,164,0.04), rgba(2,6,23,0.55)); 
+      border: 1px dashed rgba(14,165,164,0.08); 
+    }
     
     .sidebar-hidden { transform: translateX(-110%); }
     
@@ -37,24 +50,62 @@
     .sidebar-collapsed .profile-snippet { justify-content: center; }
     .sidebar a.active { background: linear-gradient(90deg, rgba(14,165,164,0.08), rgba(3,105,161,0.03)); border-left: 3px solid var(--accent); }
     .sr-only.focus\:not-sr-only:focus { position: static; width: auto; height: auto; margin: 0.5rem; clip: auto; transform: none; }
+    
+    /* Mobile Responsive Styles */
     @media (max-width: 767px) {
-      .sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 40; transform: translateX(-100%); transition: transform 0.3s ease; }
+      .sidebar { 
+        position: fixed; 
+        left: 0; 
+        top: 0; 
+        bottom: 0; 
+        z-index: 50; 
+        transform: translateX(-100%); 
+        transition: transform 0.3s ease; 
+        width: 280px;
+        overflow-y: auto;
+      }
       .sidebar.show { transform: translateX(0); }
       .mobile-header-menu { display: inline-flex; }
       .main-content { padding: 1rem; }
       .stat-tile { padding: 0.75rem; }
       .stat-tile .text-xl { font-size: 1rem; }
       .card-bg { padding: 1rem; }
-      .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 35; }
+      .mobile-overlay { 
+        position: fixed; 
+        inset: 0; 
+        background: rgba(0,0,0,0.7); 
+        z-index: 40; 
+        backdrop-filter: blur(2px);
+      }
+      .mobile-header {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+      .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+      }
     }
+    
     @media (min-width: 768px) {
       #mobile-sidebar { display: none !important; }
       .mobile-header-menu { display: none; }
+      .mobile-overlay { display: none !important; }
     }
+    
     @media (max-width: 480px) {
       .sidebar-item { padding: 0.5rem; font-size: 0.875rem; }
       .profile-snippet { flex-direction: column; align-items: center; text-align: center; }
       .profile-snippet img { width: 2rem; height: 2rem; }
+      .main-content { padding: 0.75rem; }
+      .sidebar { width: 260px; }
+    }
+    
+    @media (max-width: 360px) {
+      .main-content { padding: 0.5rem; }
+      .sidebar { width: 240px; }
     }
   </style>
 
@@ -102,7 +153,7 @@
           </span>
         </a>
 
-           <a id="link-calculator" href="{{ url_for('home') }}" class="block sidebar-item px-3 py-2 rounded hover:bg-slate-800 focus-ring">
+        <a id="link-calculator" href="{{ url_for('home') }}" class="block sidebar-item px-3 py-2 rounded hover:bg-slate-800 focus-ring">
           <span class="inline-flex items-center gap-3">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
               <path d="m12 19-7-7 7-7"/>
@@ -296,51 +347,9 @@
       </nav>
     </aside>
 
-    <div id="mobile-sidebar" class="fixed inset-0 z-50 md:hidden hidden" aria-hidden="true">
-      <div id="mobile-sidebar-overlay" class="absolute inset-0 overlay" aria-hidden="true"></div>
-      <div class="absolute left-0 top-0 bottom-0 w-72 bg-[color:var(--card)] border-r border-slate-800 p-4 overflow-y-auto">
-        <div class="flex items-center justify-between mb-4">
-          <a href="{{ url_for('home') }}" class="flex items-center gap-3">
-            <img src="{{ url_for('static', filename='favicons/android-chrome-192x192.png') }}" alt="CNT Logo" class="w-10 h-10 rounded-lg">
-          </a>
-          <button id="mobile-sidebar-close" class="p-2 rounded focus-ring" aria-label="Close menu">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="white" stroke-width="1.6" stroke-linecap="round"/></svg>
-          </button>
-        </div>
-
-        <nav aria-label="Mobile sidebar navigation" class="space-y-2 text-sm">
-          <div class="text-xs muted mb-2">Calculators</div>
-          <a href="{{ url_for('calculator') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Calculator Home</a>
-          <a href="{{ url_for('intraday') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Intraday</a>
-          <a href="{{ url_for('fo_calculator') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">F&amp;O</a>
-          <a href="{{ url_for('mtf_calculator') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">MTF</a>
-          <a href="{{ url_for('swing_calculator') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Swing</a>
-          <a href="{{ url_for('delivery_calculator') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Delivery</a>
-          
-          <div class="mt-4 text-xs muted mb-2">Saved Trades</div>
-          <a href="{{ url_for('show_saved_trades') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Intraday</a>
-          <a href="{{ url_for('saved_fno') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">F&O</a>
-          <a href="{{ url_for('saved_mtf') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">MTF</a>
-          <a href="{{ url_for('saved_swing') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Swing</a>
-          <a href="{{ url_for('saved_delivery') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Delivery</a>
-          
-          {% if current_user.is_authenticated %}
-          <div class="mt-4 text-xs muted mb-2">Account</div>
-          <a href="{{ url_for('settings') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Settings</a>
-          <a href="{{ url_for('subscription') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Subscription</a>
-          <a href="{{ url_for('logout') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring text-red-400">Logout</a>
-          {% else %}
-          <div class="mt-4 text-xs muted mb-2">Account</div>
-          <a href="{{ url_for('login') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Login</a>
-          <a href="{{ url_for('register') }}" class="block px-3 py-2 rounded hover:bg-slate-800 focus-ring">Register</a>
-          {% endif %}
-        </nav>
-      </div>
-    </div>
-
     <div class="flex-1 min-h-screen flex flex-col">
       <!-- Mobile Header -->
-      <header class="md:hidden bg-[color:var(--card)] border-b border-slate-800 p-4 flex items-center justify-between sticky top-0 z-30">
+      <header class="mobile-header md:hidden bg-[color:var(--card)] border-b border-slate-800 p-4 flex items-center justify-between sticky top-0 z-30">
         <button id="mobile-menu-toggle" class="mobile-header-menu p-2 rounded focus-ring" aria-label="Open menu" aria-expanded="false">
           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
@@ -356,7 +365,7 @@
       </main>
 
       <footer class="text-xs muted px-4 sm:px-6 py-4 border-t border-slate-800 bg-[color:var(--card)]">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div class="max-w-7xl mx-auto footer-content flex flex-col sm:flex-row items-center justify-between gap-2">
           <div>© <span id="year"></span> CalculateNTrade</div>
           <div class="text-center sm:text-right">Risk Warning: Trading involves risk of loss.</div>
         </div>
@@ -365,15 +374,109 @@
   </div>
 
   <script>
-    
-    function locPath(){ try{ return window.location.pathname || ''; }catch(e){ return ''; } }
+    // Mobile Responsive Sidebar Functionality
+    (function(){
+      const mobileToggle = document.getElementById('mobile-menu-toggle');
+      const sidebar = document.getElementById('sidebar');
+      const mobileOverlay = document.getElementById('mobile-overlay');
+      
+      // Function to open mobile sidebar
+      function openMobileSidebar() {
+        if(sidebar) {
+          sidebar.classList.remove('hidden');
+          sidebar.classList.add('show');
+        }
+        if(mobileOverlay) {
+          mobileOverlay.classList.remove('hidden');
+        }
+        if(mobileToggle) {
+          mobileToggle.setAttribute('aria-expanded', 'true');
+        }
+        document.body.style.overflow = 'hidden';
+      }
+      
+      // Function to close mobile sidebar
+      function closeMobileSidebar() {
+        if(sidebar) {
+          sidebar.classList.remove('show');
+          // Only hide on mobile, keep visible on desktop
+          if(window.innerWidth < 768) {
+            sidebar.classList.add('hidden');
+          }
+        }
+        if(mobileOverlay) {
+          mobileOverlay.classList.add('hidden');
+        }
+        if(mobileToggle) {
+          mobileToggle.setAttribute('aria-expanded', 'false');
+        }
+        document.body.style.overflow = '';
+      }
+      
+      // Toggle sidebar when menu button is clicked
+      if(mobileToggle) {
+        mobileToggle.addEventListener('click', function() {
+          if(sidebar && sidebar.classList.contains('show')) {
+            closeMobileSidebar();
+          } else {
+            openMobileSidebar();
+          }
+        });
+      }
+      
+      // Close sidebar when overlay is clicked
+      if(mobileOverlay) {
+        mobileOverlay.addEventListener('click', closeMobileSidebar);
+      }
+      
+      // Close sidebar when clicking on a link (mobile only)
+      if(sidebar) {
+        const sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            if(window.innerWidth < 768) {
+              closeMobileSidebar();
+            }
+          });
+        });
+      }
+      
+      // Close sidebar when pressing Escape key
+      document.addEventListener('keydown', function(e) {
+        if(e.key === 'Escape') {
+          closeMobileSidebar();
+        }
+      });
+      
+      // Handle window resize
+      window.addEventListener('resize', function() {
+        if(window.innerWidth >= 768) {
+          // On desktop, ensure sidebar is visible and not in mobile state
+          if(sidebar) {
+            sidebar.classList.remove('hidden', 'show');
+          }
+          if(mobileOverlay) {
+            mobileOverlay.classList.add('hidden');
+          }
+          document.body.style.overflow = '';
+        } else {
+          // On mobile, ensure sidebar is hidden by default
+          if(sidebar && !sidebar.classList.contains('show')) {
+            sidebar.classList.add('hidden');
+          }
+        }
+      });
+      
+      // Initialize sidebar state on load
+      if(window.innerWidth < 768 && sidebar) {
+        sidebar.classList.add('hidden');
+      }
+    })();
+
+    // Desktop Sidebar Collapse Functionality
     (function(){
       const sidebar = document.getElementById('sidebar');
       const collapseBtn = document.getElementById('sidebar-collapse');
-      const mobileToggle = document.getElementById('mobile-menu-toggle');
-      const mobileSidebar = document.getElementById('mobile-sidebar');
-      const mobileOverlay = document.getElementById('mobile-sidebar-overlay');
-      const mobileClose = document.getElementById('mobile-sidebar-close');
 
       function setCollapsed(collapsed){
         if(!sidebar) return;
@@ -397,121 +500,54 @@
         const isCollapsed = sidebar && sidebar.classList.contains('sidebar-collapsed');
         setCollapsed(!isCollapsed);
       });
-
-      function openMobile(){ 
-        if(mobileSidebar){ 
-          mobileSidebar.classList.remove('hidden'); 
-          mobileSidebar.setAttribute('aria-hidden','false'); 
-          mobileToggle && mobileToggle.setAttribute('aria-expanded','true'); 
-          document.body.style.overflow='hidden'; 
-        }
-        // Also handle main sidebar on mobile
-        const mainSidebar = document.getElementById('sidebar');
-        if(mainSidebar) mainSidebar.classList.add('show');
-      }
-      function closeMobile(){ 
-        if(mobileSidebar){ 
-          mobileSidebar.classList.add('hidden'); 
-          mobileSidebar.setAttribute('aria-hidden','true'); 
-          mobileToggle && mobileToggle.setAttribute('aria-expanded','false'); 
-          document.body.style.overflow=''; 
-        }
-        // Also handle main sidebar on mobile
-        const mainSidebar = document.getElementById('sidebar');
-        if(mainSidebar) mainSidebar.classList.remove('show');
-      }
-
-      if(mobileToggle){
-        mobileToggle.addEventListener('click', () => { if(mobileSidebar && mobileSidebar.classList.contains('hidden')) openMobile(); else closeMobile(); });
-      }
-      
-      // Handle mobile menu toggle button
-      const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-      const mobileOverlay = document.getElementById('mobile-overlay');
-      
-      function openMobileSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        if(sidebar) {
-          sidebar.classList.add('show');
-          sidebar.classList.remove('hidden');
-          if(mobileOverlay) mobileOverlay.classList.remove('hidden');
-          if(mobileMenuToggle) mobileMenuToggle.setAttribute('aria-expanded', 'true');
-          document.body.style.overflow = 'hidden';
-        }
-      }
-      
-      function closeMobileSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        if(sidebar) {
-          sidebar.classList.remove('show');
-          if(mobileOverlay) mobileOverlay.classList.add('hidden');
-          if(mobileMenuToggle) mobileMenuToggle.setAttribute('aria-expanded', 'false');
-          document.body.style.overflow = '';
-        }
-      }
-      
-      if(mobileMenuToggle){
-        mobileMenuToggle.addEventListener('click', () => {
-          const sidebar = document.getElementById('sidebar');
-          if(sidebar && sidebar.classList.contains('show')) {
-            closeMobileSidebar();
-          } else {
-            openMobileSidebar();
-          }
-        });
-      }
-      
-      // Close sidebar when clicking overlay
-      if(mobileOverlay) {
-        mobileOverlay.addEventListener('click', closeMobileSidebar);
-      }
-      
-      // Close sidebar when clicking any link on mobile
-      const sidebarLinks = document.querySelectorAll('#sidebar a');
-      sidebarLinks.forEach(link => {
-        link.addEventListener('click', () => {
-          if(window.innerWidth < 768) {
-            closeMobileSidebar();
-          }
-        });
-      });
-      mobileOverlay && mobileOverlay.addEventListener('click', closeMobile);
-      mobileClose && mobileClose.addEventListener('click', closeMobile);
-      document.addEventListener('keydown', (e)=>{ 
-        if(e.key==='Escape') {
-          closeMobile();
-          closeMobileSidebar();
-        }
-      });
-
-      function highlightActive(){
-        const path = locPath().replace(/\/+$/,''); 
-        const container = sidebar || document;
-        const links = container.querySelectorAll('a');
-        links.forEach(a => {
-          try{
-            const href = a.getAttribute('href') || '';
-            if(!href || href.startsWith('#')) { a.classList.remove('active'); a.removeAttribute('aria-current'); return; }
-            const url = new URL(href, window.location.origin);
-            const p = url.pathname.replace(/\/+$/,'');
-            if(p && path === p){
-              a.classList.add('active');
-              a.setAttribute('aria-current','page');
-            } else {
-              a.classList.remove('active');
-              a.removeAttribute('aria-current');
-            }
-          }catch(e){ }
-        });
-      }
-
-      try { highlightActive(); } catch(e){}
-
-      window.addEventListener('popstate', highlightActive);
     })();
 
-    (function(){ const y = document.getElementById('year'); if(y) y.textContent = new Date().getFullYear(); })();
+    // Active Link Highlighting
+    function locPath(){ 
+      try{ 
+        return window.location.pathname || ''; 
+      }catch(e){ 
+        return ''; 
+      } 
+    }
+    
+    function highlightActive(){
+      const path = locPath().replace(/\/+$/,''); 
+      const container = document;
+      const links = container.querySelectorAll('a');
+      links.forEach(a => {
+        try{
+          const href = a.getAttribute('href') || '';
+          if(!href || href.startsWith('#')) { 
+            a.classList.remove('active'); 
+            a.removeAttribute('aria-current'); 
+            return; 
+          }
+          const url = new URL(href, window.location.origin);
+          const p = url.pathname.replace(/\/+$/,'');
+          if(p && path === p){
+            a.classList.add('active');
+            a.setAttribute('aria-current','page');
+          } else {
+            a.classList.remove('active');
+            a.removeAttribute('aria-current');
+          }
+        }catch(e){ }
+      });
+    }
 
+    try { 
+      highlightActive(); 
+      window.addEventListener('popstate', highlightActive);
+    } catch(e){}
+
+    // Set current year in footer
+    (function(){ 
+      const y = document.getElementById('year'); 
+      if(y) y.textContent = new Date().getFullYear(); 
+    })();
+
+    // Theme Toggle Functionality
     (function(){
       const toggle = document.getElementById('theme-toggle');
       const sun = document.getElementById('icon-sun');
@@ -546,6 +582,9 @@
   
   <!-- Session Manager -->
   <script src="{{ url_for('static', filename='js/session-manager.js') }}"></script>
+  
+  <!-- Logout Helper -->
+  <script src="{{ url_for('static', filename='js/logout-helper.js') }}"></script>
   
   <!-- Flash Messages Integration -->
   {% with messages = get_flashed_messages(with_categories=true) %}

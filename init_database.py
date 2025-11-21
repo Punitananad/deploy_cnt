@@ -11,6 +11,38 @@ from datetime import datetime, timezone
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+def init_instruments_table(db):
+    """Initialize instruments table structure and indexes"""
+    from sqlalchemy import text
+    
+    # Create instruments table if it doesn't exist
+    db.session.execute(text("""
+        CREATE TABLE IF NOT EXISTS instruments (
+            id SERIAL PRIMARY KEY,
+            symbol_name VARCHAR(50) NOT NULL,
+            display_name VARCHAR(100),
+            security_id VARCHAR(20) NOT NULL,
+            exch_id VARCHAR(10) NOT NULL,
+            segment VARCHAR(10) NOT NULL,
+            instrument_type VARCHAR(20) DEFAULT 'EQUITY',
+            lot_size INTEGER DEFAULT 1,
+            tick_size DECIMAL(10,4) DEFAULT 0.05,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+    """))
+    
+    # Create indexes for fast search
+    db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_instruments_symbol ON instruments(symbol_name)"))
+    db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_instruments_display ON instruments(display_name)"))
+    db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_instruments_security_id ON instruments(security_id)"))
+    db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_instruments_exch_segment ON instruments(exch_id, segment)"))
+    
+    db.session.commit()
+    
+    # Check existing count
+    result = db.session.execute(text("SELECT COUNT(*) FROM instruments")).fetchone()
+    print(f"✓ Instruments table ready with {result[0]} symbols")
+
 def init_database():
     """Initialize all database tables"""
     try:
@@ -56,6 +88,13 @@ def init_database():
             except Exception as e:
                 print(f"⚠ Subscription plans initialization failed: {e}")
             
+            # Initialize instruments table structure
+            try:
+                init_instruments_table(db)
+                print("✓ Instruments table structure initialized")
+            except Exception as e:
+                print(f"⚠ Instruments table initialization failed: {e}")
+            
             # Check if mentor table exists and has the required columns
             try:
                 from sqlalchemy import text
@@ -89,6 +128,26 @@ def init_database():
                     
             except Exception as e:
                 print(f"⚠ Error checking mentor table: {e}")
+            
+            # List all tables
+            try:
+                from sqlalchemy import text
+                result = db.session.execute(
+                    text("""
+                        SELECT table_name 
+                        FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        ORDER BY table_name
+                    """)
+                ).fetchall()
+                
+                tables = [row[0] for row in result]
+                print(f"\n📋 Database has {len(tables)} tables:")
+                for table in tables:
+                    print(f"  - {table}")
+                    
+            except Exception as e:
+                print(f"⚠ Error listing tables: {e}")
             
             print("\nDatabase initialization completed!")
             return True

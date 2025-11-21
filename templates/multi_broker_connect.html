@@ -522,6 +522,12 @@
           </svg>
           Disconnect
         </button>
+        <button class="btn" style="background: #10b981; color: white;" onclick="testDhanConnection()" id="dhan-test">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Test Connection
+        </button>
       </div>
     </div>
 
@@ -1081,12 +1087,31 @@ function displayTrades(trades) {
     // Debug each trade
     console.log('Processing trade:', trade);
     
-    // Extract values with proper fallbacks for Angel broker
-    const quantity = trade.filledshares || trade.fillsize || trade.quantity || trade.qty || 0;
-    const price = trade.averageprice || trade.fillprice || trade.price || trade.average_price || 0;
-    const symbol = trade.tradingsymbol || trade.symbol || 'Unknown';
-    const transactionType = trade.transactiontype || trade.transaction_type || trade.side || 'BUY';
-    const status = trade.orderstatus || trade.status || 'COMPLETE';
+    // Extract values with broker-specific field mappings
+    let quantity, price, symbol, transactionType, status;
+    
+    if (connectedBroker === 'dhan') {
+      // Dhan-specific field mappings
+      quantity = trade.tradedQuantity || trade.quantity || trade.qty || 0;
+      price = trade.tradedPrice || trade.price || trade.average_price || 0;
+      symbol = trade.tradingSymbol || trade.symbol || 'Unknown';
+      transactionType = trade.transactionType || trade.orderType || 'BUY';
+      status = trade.orderStatus || trade.status || 'COMPLETE';
+    } else if (connectedBroker === 'angel') {
+      // Angel broker field mappings
+      quantity = trade.filledshares || trade.fillsize || trade.quantity || trade.qty || 0;
+      price = trade.averageprice || trade.fillprice || trade.price || trade.average_price || 0;
+      symbol = trade.tradingsymbol || trade.symbol || 'Unknown';
+      transactionType = trade.transactiontype || trade.transaction_type || trade.side || 'BUY';
+      status = trade.orderstatus || trade.status || 'COMPLETE';
+    } else {
+      // Default mappings for other brokers (Kite, etc.)
+      quantity = trade.quantity || trade.qty || 0;
+      price = trade.price || trade.average_price || 0;
+      symbol = trade.tradingsymbol || trade.symbol || 'Unknown';
+      transactionType = trade.transaction_type || trade.side || 'BUY';
+      status = trade.status || 'COMPLETE';
+    }
     
     console.log(`Trade ${symbol}: qty=${quantity}, price=${price}, type=${transactionType}`);
     
@@ -1253,27 +1278,45 @@ function importTrade(tradeDataStr) {
     let quantity = 0;
     let price = 0;
     
-    if (connectedBroker === 'angel') {
-      // Angel broker field mappings - ensure proper conversion
+    if (connectedBroker === 'dhan') {
+      // Dhan broker field mappings
+      quantity = parseFloat(trade.tradedQuantity || trade.quantity || trade.qty || 0);
+      price = parseFloat(trade.tradedPrice || trade.price || trade.average_price || 0);
+      console.log('Dhan mapping - quantity:', quantity, 'price:', price);
+    } else if (connectedBroker === 'angel') {
+      // Angel broker field mappings
       quantity = parseFloat(trade.filledshares || trade.fillsize || trade.quantity || trade.qty || 0);
       price = parseFloat(trade.averageprice || trade.fillprice || trade.price || trade.average_price || 0);
       console.log('Angel mapping - quantity:', quantity, 'price:', price);
     } else {
-      // Default mappings for other brokers
+      // Default mappings for other brokers (Kite, etc.)
       quantity = parseFloat(trade.quantity || trade.qty || 0);
       price = parseFloat(trade.price || trade.average_price || 0);
       console.log('Default mapping - quantity:', quantity, 'price:', price);
     }
     
-    const importData = {
-      symbol: trade.symbol || trade.tradingsymbol,
-      quantity: quantity,
-      price: price,
-      date: trade.trade_date || trade.order_timestamp,
-      trade_type: (trade.transactiontype || trade.transaction_type || trade.side || 'BUY').toLowerCase() === 'buy' ? 'long' : 'short',
-      broker_id: trade.orderid || trade.order_id || trade.trade_id,
-      broker: connectedBroker
-    };
+    let importData;
+    if (connectedBroker === 'dhan') {
+      importData = {
+        symbol: trade.tradingSymbol || trade.symbol,
+        quantity: quantity,
+        price: price,
+        date: trade.createTime || trade.exchangeTime || trade.trade_date,
+        trade_type: (trade.transactionType || trade.orderType || 'BUY').toLowerCase() === 'buy' ? 'long' : 'short',
+        broker_id: trade.orderId || trade.exchangeTradeId,
+        broker: connectedBroker
+      };
+    } else {
+      importData = {
+        symbol: trade.symbol || trade.tradingsymbol,
+        quantity: quantity,
+        price: price,
+        date: trade.trade_date || trade.order_timestamp,
+        trade_type: (trade.transactiontype || trade.transaction_type || trade.side || 'BUY').toLowerCase() === 'buy' ? 'long' : 'short',
+        broker_id: trade.orderid || trade.order_id || trade.trade_id,
+        broker: connectedBroker
+      };
+    }
     
     console.log('Final import data:', importData);
     
@@ -1338,25 +1381,42 @@ document.addEventListener('DOMContentLoaded', function() {
               let quantity = 0;
               let price = 0;
               
-              if (connectedBroker === 'angel') {
-                // Angel broker field mappings - ensure proper conversion
+              if (connectedBroker === 'dhan') {
+                // Dhan broker field mappings
+                quantity = parseFloat(trade.tradedQuantity || trade.quantity || trade.qty || 0);
+                price = parseFloat(trade.tradedPrice || trade.price || trade.average_price || 0);
+              } else if (connectedBroker === 'angel') {
+                // Angel broker field mappings
                 quantity = parseFloat(trade.filledshares || trade.fillsize || trade.quantity || trade.qty || 0);
                 price = parseFloat(trade.averageprice || trade.fillprice || trade.price || trade.average_price || 0);
               } else {
-                // Default mappings for other brokers
+                // Default mappings for other brokers (Kite, etc.)
                 quantity = parseFloat(trade.quantity || trade.qty || 0);
                 price = parseFloat(trade.price || trade.average_price || 0);
               }
               
-              const importData = {
-                symbol: trade.symbol || trade.tradingsymbol,
-                quantity: quantity,
-                price: price,
-                date: trade.trade_date || trade.order_timestamp,
-                trade_type: (trade.transactiontype || trade.transaction_type || trade.side || 'BUY').toLowerCase() === 'buy' ? 'long' : 'short',
-                broker_id: trade.orderid || trade.order_id || trade.trade_id,
-                broker: connectedBroker
-              };
+              let importData;
+              if (connectedBroker === 'dhan') {
+                importData = {
+                  symbol: trade.tradingSymbol || trade.symbol,
+                  quantity: quantity,
+                  price: price,
+                  date: trade.createTime || trade.exchangeTime || trade.trade_date,
+                  trade_type: (trade.transactionType || trade.orderType || 'BUY').toLowerCase() === 'buy' ? 'long' : 'short',
+                  broker_id: trade.orderId || trade.exchangeTradeId,
+                  broker: connectedBroker
+                };
+              } else {
+                importData = {
+                  symbol: trade.symbol || trade.tradingsymbol,
+                  quantity: quantity,
+                  price: price,
+                  date: trade.trade_date || trade.order_timestamp,
+                  trade_type: (trade.transactiontype || trade.transaction_type || trade.side || 'BUY').toLowerCase() === 'buy' ? 'long' : 'short',
+                  broker_id: trade.orderid || trade.order_id || trade.trade_id,
+                  broker: connectedBroker
+                };
+              }
               
               fetch('/calculatentrade_journal/api/broker/import-trade', {
                 method: 'POST',
@@ -1437,6 +1497,117 @@ async function disconnectBroker(broker) {
     }
   } catch (error) {
     showMessage(`Disconnect error: ${error.message}`, 'error');
+  }
+}
+
+async function testDhanConnection() {
+  const clientId = document.getElementById('dhan_client_id').value.trim();
+  const accessToken = document.getElementById('dhan_access_token').value.trim();
+  
+  if (!clientId || !accessToken) {
+    showMessage('Please enter both Dhan Client ID and Access Token first', 'warning');
+    return;
+  }
+  
+  showMessage('Testing Dhan connection...', 'info');
+  
+  try {
+    // First register the credentials
+    const registerResponse = await fetch('/api/multi_broker/register_app/dhan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: clientId,
+        client_id: clientId,
+        access_token: accessToken
+      })
+    });
+    
+    const registerResult = await registerResponse.json();
+    if (!registerResult.ok) {
+      throw new Error(registerResult.message);
+    }
+    
+    // Test the connection
+    const testResponse = await fetch(`/api/multi_broker/dhan/debug?user_id=${encodeURIComponent(clientId)}`);
+    const testData = await testResponse.json();
+    
+    if (testData.client_type) {
+      let message = `✅ Dhan connection successful!\n\n`;
+      message += `Client Type: ${testData.client_type}\n`;
+      message += `Available Methods: ${testData.available_methods.length}\n\n`;
+      
+      if (testData.trade_methods_test) {
+        message += `Trade Methods Test:\n`;
+        for (const [method, result] of Object.entries(testData.trade_methods_test)) {
+          if (typeof result === 'object' && result.result_length !== undefined) {
+            message += `• ${method}: Found ${result.result_length} records\n`;
+          } else {
+            message += `• ${method}: ${result}\n`;
+          }
+        }
+      }
+      
+      showMessage(message.replace(/\n/g, '<br>'), 'success');
+      
+      // If connection is successful, show connect button
+      document.querySelector('#dhan-form .btn-primary').style.display = 'inline-flex';
+    } else {
+      showMessage('❌ Dhan connection failed. Please check your credentials.', 'error');
+    }
+    
+  } catch (error) {
+    showMessage(`❌ Connection test failed: ${error.message}`, 'error');
+  }
+}
+
+async function debugDhanSession() {
+  const userId = document.getElementById('dhan_client_id').value.trim();
+  if (!userId) {
+    showMessage('Please enter Dhan Client ID first', 'warning');
+    return;
+  }
+  
+  try {
+    // Check Dhan status
+    const statusResponse = await fetch(`/api/multi_broker/dhan/status?user_id=${encodeURIComponent(userId)}`);
+    const statusData = await statusResponse.json();
+    
+    // Check Dhan debug info
+    const debugResponse = await fetch(`/api/multi_broker/dhan/debug?user_id=${encodeURIComponent(userId)}`);
+    const debugData = await debugResponse.json();
+    
+    const debugInfo = {
+      status: statusData,
+      debug: debugData,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('Dhan Debug Info:', debugInfo);
+    
+    let message = `🔍 Dhan Debug Info for ${userId}:\n\n`;
+    message += `Session Found: ${statusData.msg !== 'no session'}\n`;
+    message += `API Test: ${statusData.api_test || 'not tested'}\n`;
+    message += `Client Type: ${debugData.client_type || 'unknown'}\n`;
+    message += `Available Trade Methods: ${debugData.available_methods ? debugData.available_methods.join(', ') : 'none'}\n\n`;
+    
+    if (debugData.trade_methods_test) {
+      message += `Trade Methods Test Results:\n`;
+      for (const [method, result] of Object.entries(debugData.trade_methods_test)) {
+        if (typeof result === 'object') {
+          message += `- ${method}: ${result.result_type} (length: ${result.result_length})\n`;
+        } else {
+          message += `- ${method}: ${result}\n`;
+        }
+      }
+    }
+    
+    alert(message);
+    showMessage('Dhan debug info logged to console. Check browser console for full details.', 'info');
+    
+  } catch (error) {
+    console.error('Dhan debug error:', error);
+    showMessage(`Dhan debug failed: ${error.message}`, 'error');
   }
 }
 

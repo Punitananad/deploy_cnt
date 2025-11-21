@@ -32,7 +32,11 @@ load_dotenv()
 multi_broker_bp = Blueprint('multi_broker', __name__, url_prefix='/api/multi_broker')
 broker_api_bp = Blueprint('broker_api', __name__, url_prefix='/api/broker')
 
-BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5000")
+# Production fix: Use HTTPS domain in production
+if os.getenv('FLASK_ENV') == 'production':
+    BASE_URL = os.getenv("APP_BASE_URL", "https://www.calculatentrade.com")
+else:
+    BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5000")
 
 # In-memory stores (replace with DB in production)
 USER_APPS = {
@@ -85,12 +89,25 @@ def _dhan_consume_consent(partner_id, partner_secret, token_id):
 def _dhan_client_from_session(user_id):
     sess = USER_SESSIONS["dhan"].get(user_id)
     if not sess:
+        print(f"No Dhan session found for user_id: {user_id}")
+        print(f"Available Dhan sessions: {list(USER_SESSIONS['dhan'].keys())}")
         return None, jsonify({"ok": False, "message": "Not connected"}), 401
+    
     client_id = sess.get("dhan_client_id") or user_id
     access_token = sess.get("access_token")
+    
+    print(f"Dhan session for {user_id}: client_id={client_id}, has_token={bool(access_token)}")
+    
     if not access_token:
         return None, jsonify({"ok": False, "message": "Missing Dhan access token"}), 500
-    return make_dhan_client(client_id, access_token), None, None
+    
+    try:
+        client = make_dhan_client(client_id, access_token)
+        print(f"Dhan client created successfully for {user_id}")
+        return client, None, None
+    except Exception as e:
+        print(f"Error creating Dhan client: {e}")
+        return None, jsonify({"ok": False, "message": f"Client creation failed: {str(e)}"}), 500
 
 # ===================== ANGEL ONE HELPERS =====================
 def _angel_sdk_login(api_key: str, client_code: str, password: str, totp: str):
@@ -416,14 +433,58 @@ def dhan_trades():
     if client is None:
         return resp, code
     try:
+        # Try different method names for different Dhan API versions
+        trades = []
+        
+        # Method 1: get_trade_book (most common)
         if hasattr(client, "get_trade_book"):
-            trades = client.get_trade_book()
-        elif hasattr(client, "get_trade_history"):
-            trades = client.get_trade_history(from_date=None, to_date=None, page_number=0)
-        else:
+            try:
+                trades = client.get_trade_book()
+                print(f"Dhan get_trade_book returned: {trades}")
+            except Exception as e:
+                print(f"get_trade_book failed: {e}")
+        
+        # Method 2: get_trade_history with today's date
+        if not trades and hasattr(client, "get_trade_history"):
+            try:
+                from datetime import datetime
+                today = datetime.now().strftime("%Y-%m-%d")
+                trades = client.get_trade_history(from_date=today, to_date=today, page_number=0)
+                print(f"Dhan get_trade_history returned: {trades}")
+            except Exception as e:
+                print(f"get_trade_history failed: {e}")
+        
+        # Method 3: get_tradebook (alternative spelling)
+        if not trades and hasattr(client, "get_tradebook"):
+            try:
+                trades = client.get_tradebook()
+                print(f"Dhan get_tradebook returned: {trades}")
+            except Exception as e:
+                print(f"get_tradebook failed: {e}")
+        
+        # Method 4: tradebook property
+        if not trades and hasattr(client, "tradebook"):
+            try:
+                trades = client.tradebook()
+                print(f"Dhan tradebook() returned: {trades}")
+            except Exception as e:
+                print(f"tradebook() failed: {e}")
+        
+        # Handle response format
+        if isinstance(trades, dict):
+            if 'data' in trades:
+                trades = trades['data']
+            elif 'tradebook' in trades:
+                trades = trades['tradebook']
+        
+        # Ensure trades is a list
+        if not isinstance(trades, list):
             trades = []
+        
+        print(f"Final Dhan trades count: {len(trades)}")
         return jsonify({"ok": True, "data": trades})
     except Exception as e:
+        print(f"Dhan trades error: {str(e)}")
         return jsonify({"ok": False, "message": str(e)}), 400
 
 # ----- Angel One Endpoints -----
@@ -547,7 +608,76 @@ def kite_status():
 @multi_broker_bp.route('/dhan/status')
 def dhan_status():
     user_id = request.args.get("user_id")
-    return jsonify(USER_SESSIONS["dhan"].get(user_id) or {"msg": "no session"})
+    sess = USER_SESSIONS["dhan"].get(user_id)
+    if not sess:
+        return jsonify({"msg": "no session", "available_sessions": list(USER_SESSIONS["dhan"].keys())})
+    
+    # Test API connection
+    api_test_result = None
+    try:
+        client, resp, code = _dhan_client_from_session(user_id)
+        if client:
+            # Try to get profile or any simple API call
+            if hasattr(client, 'get_fund_limits'):
+                funds = client.get_fund_limits()
+                api_test_result = "success - funds retrieved"
+            elif hasattr(client, 'get_positions'):
+                positions = client.get_positions()
+                api_test_result = f"success - {len(positions) if isinstance(positions, list) else 'unknown'} positions"
+            else:
+                api_test_result = "client created but no test method available"
+    except Exception as e:
+        api_test_result = f"failed: {str(e)}"
+    
+    return jsonify({
+        **sess,
+        "api_test": api_test_result,
+        "available_methods": [method for method in dir(client) if not method.startswith('_')] if 'client' in locals() and client else []
+    })
+
+@multi_broker_bp.route('/dhan/debug')
+def dhan_debug():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"error": "user_id required"}), 400
+    
+    client, resp, code = _dhan_client_from_session(user_id)
+    if client is None:
+        return resp, code
+    
+    debug_info = {
+        "client_type": type(client).__name__,
+        "available_methods": [method for method in dir(client) if not method.startswith('_') and 'trade' in method.lower()],
+        "all_methods": [method for method in dir(client) if not method.startswith('_')],
+    }
+    
+    # Test each trade-related method
+    trade_methods_results = {}
+    for method_name in debug_info["available_methods"]:
+        try:
+            method = getattr(client, method_name)
+            if callable(method):
+                if 'trade' in method_name.lower():
+                    if method_name in ['get_trade_book', 'get_tradebook']:
+                        result = method()
+                    elif method_name == 'get_trade_history':
+                        from datetime import datetime
+                        today = datetime.now().strftime("%Y-%m-%d")
+                        result = method(from_date=today, to_date=today, page_number=0)
+                    else:
+                        result = "method exists but not tested"
+                    
+                    trade_methods_results[method_name] = {
+                        "result_type": type(result).__name__,
+                        "result_length": len(result) if isinstance(result, (list, dict)) else "N/A",
+                        "sample_data": str(result)[:200] if result else "empty"
+                    }
+        except Exception as e:
+            trade_methods_results[method_name] = f"error: {str(e)}"
+    
+    debug_info["trade_methods_test"] = trade_methods_results
+    
+    return jsonify(debug_info)
 
 @multi_broker_bp.route('/angel/status')
 def angel_status():
@@ -615,12 +745,65 @@ def api_get_all_data():
             if client is None:
                 return jsonify({"success": False, "message": "Dhan not connected"}), 401
             
+            # Get trades using the same logic as dhan_trades endpoint
+            trades = []
+            try:
+                # Method 1: get_trade_book (most common)
+                if hasattr(client, "get_trade_book"):
+                    try:
+                        trades = client.get_trade_book()
+                        print(f"Dhan get_trade_book returned: {trades}")
+                    except Exception as e:
+                        print(f"get_trade_book failed: {e}")
+                
+                # Method 2: get_trade_history with today's date
+                if not trades and hasattr(client, "get_trade_history"):
+                    try:
+                        from datetime import datetime
+                        today = datetime.now().strftime("%Y-%m-%d")
+                        trades = client.get_trade_history(from_date=today, to_date=today, page_number=0)
+                        print(f"Dhan get_trade_history returned: {trades}")
+                    except Exception as e:
+                        print(f"get_trade_history failed: {e}")
+                
+                # Method 3: get_tradebook (alternative spelling)
+                if not trades and hasattr(client, "get_tradebook"):
+                    try:
+                        trades = client.get_tradebook()
+                        print(f"Dhan get_tradebook returned: {trades}")
+                    except Exception as e:
+                        print(f"get_tradebook failed: {e}")
+                
+                # Method 4: tradebook property
+                if not trades and hasattr(client, "tradebook"):
+                    try:
+                        trades = client.tradebook()
+                        print(f"Dhan tradebook() returned: {trades}")
+                    except Exception as e:
+                        print(f"tradebook() failed: {e}")
+                
+                # Handle response format
+                if isinstance(trades, dict):
+                    if 'data' in trades:
+                        trades = trades['data']
+                    elif 'tradebook' in trades:
+                        trades = trades['tradebook']
+                
+                # Ensure trades is a list
+                if not isinstance(trades, list):
+                    trades = []
+                
+                print(f"Final Dhan trades count: {len(trades)}")
+            except Exception as e:
+                print(f"Error getting Dhan trades: {e}")
+                trades = []
+            
             return jsonify({
                 "success": True,
                 "data": {
                     "orders": client.get_order_list(),
                     "positions": client.get_positions(),
-                    "trades": client.get_trade_book() if hasattr(client, "get_trade_book") else []
+                    "trades": trades
                 }
             })
             
@@ -640,9 +823,10 @@ def api_get_all_data():
                 positions_response = smart_api.position()
                 trades_response = smart_api.tradeBook()
                 
-                print(f"Angel get-all-data - Orders: {orders_response}")
-                print(f"Angel get-all-data - Positions: {positions_response}")
-                print(f"Angel get-all-data - Trades: {trades_response}")
+                # Debug logging for Angel One API responses
+                print(f"Angel get-all-data - Orders response type: {type(orders_response)}, length: {len(orders_response) if isinstance(orders_response, (list, dict)) else 'N/A'}")
+                print(f"Angel get-all-data - Positions response type: {type(positions_response)}, length: {len(positions_response) if isinstance(positions_response, (list, dict)) else 'N/A'}")
+                print(f"Angel get-all-data - Trades response type: {type(trades_response)}, length: {len(trades_response) if isinstance(trades_response, (list, dict)) else 'N/A'}")
                 
                 # Process orders
                 if isinstance(orders_response, dict) and 'data' in orders_response:
@@ -775,6 +959,7 @@ def saved_sessions():
 def health():
     return "ok", 200
 
+# Debug route for Angel sessions
 @multi_broker_bp.route('/debug/sessions')
 def debug_sessions():
     """Debug endpoint to check all active sessions"""

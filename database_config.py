@@ -23,7 +23,10 @@ def get_postgres_url():
     
     # Fallback to individual components
     db_user = os.getenv('DB_USER', 'postgres')
-    db_password = os.getenv('DB_PASSWORD', 'Punit@1465')
+    # PRODUCTION: Remove hardcoded password
+    db_password = os.getenv('DB_PASSWORD')  # Must be set in production
+    if not db_password:
+        raise ValueError("DB_PASSWORD environment variable must be set in production")
     db_host = os.getenv('DB_HOST', 'localhost')
     db_port = os.getenv('DB_PORT', '5432')
     db_name = os.getenv('DB_NAME', 'calculatentrade_db')

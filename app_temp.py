@@ -1,4 +1,4 @@
-﻿import os
+import os
 import secrets
 import hashlib
 import time
@@ -46,7 +46,6 @@ from mentor import mentor_bp, init_mentor_db
 from subscription_admin import subscription_admin_bp
 from subscription_models import init_subscription_plans, get_user_active_subscription, create_user_subscription
 from broker_bp import broker_bp
-from debug_routes import debug_bp
 
 
 
@@ -71,14 +70,7 @@ load_dotenv()
 # ------------------------------------------------------------------------------
 app = Flask(__name__)
 
-# Production OAuth session fix - MUST be set immediately after Flask app creation
-if os.getenv('FLASK_ENV') == 'production':
-    app.config["SESSION_COOKIE_SAMESITE"] = "None"
-    app.config["SESSION_COOKIE_SECURE"] = True
-    app.config["SESSION_COOKIE_HTTPONLY"] = True
-    app.config["SESSION_COOKIE_DOMAIN"] = ".calculatentrade.com"
-    app.config["REMEMBER_COOKIE_SAMESITE"] = "None"
-    app.config["REMEMBER_COOKIE_SECURE"] = True
+
 
 # Template configuration to prevent encoding issues
 
@@ -109,27 +101,23 @@ app.config["SQLALCHEMY_RECORD_QUERIES"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = get_database_engine_options()
 
 # Session cookie configuration for persistent sessions
-if os.getenv('FLASK_ENV') != 'production':
-    app.config.update(
-        SESSION_COOKIE_SECURE=False,
-        SESSION_COOKIE_SAMESITE='Lax',
-        SESSION_COOKIE_HTTPONLY=True,
-        PERMANENT_SESSION_LIFETIME=timedelta(days=30),
-        SESSION_COOKIE_NAME='calculatentrade_session'
-    )
-else:
-    app.config.update(
-        PERMANENT_SESSION_LIFETIME=timedelta(days=30),
-        SESSION_COOKIE_NAME='calculatentrade_session'
-    )
+app.config.update(
+    SESSION_COOKIE_SECURE=False,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_HTTPONLY=True,  # Prevent XSS attacks
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),  # 30 days persistent session
+    SESSION_COOKIE_NAME='calculatentrade_session'  # Custom session name
+)
 
 
 
 # Apply ProxyFix for production deployment behind proxy/nginx
 if os.getenv('FLASK_ENV') == 'production':
-    # Enable proxy header support so Flask correctly detects HTTPS behind nginx
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1, x_for=1)
     app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+        SESSION_COOKIE_HTTPONLY=True,
         SEND_FILE_MAX_AGE_DEFAULT=31536000,  # 1 year cache for static files
         PREFERRED_URL_SCHEME='https'
     )
@@ -162,11 +150,7 @@ login_manager = LoginManager()
 login_manager.login_view = "login"   # route name of your login view
 login_manager.login_message = "Please log in to access this page."
 login_manager.login_message_category = "info"
-# Disable strong session protection in production to allow OAuth redirects
-if os.getenv('FLASK_ENV') == 'production':
-    login_manager.session_protection = None
-else:
-    login_manager.session_protection = "strong"
+login_manager.session_protection = "strong"  # Protect against session hijacking
 login_manager.remember_cookie_duration = timedelta(days=30)  # Remember me cookie duration
 login_manager.init_app(app)
 
@@ -205,13 +189,6 @@ except (ImportError, Exception):
         return {'connected': False}
 
 # Blueprint registration will be done after models are defined
-
-# Register debug blueprint for production troubleshooting
-try:
-    app.register_blueprint(debug_bp)
-    print("Debug routes registered")
-except Exception as e:
-    print(f"Failed to register debug routes: {e}")
 
 # Database initialization is handled by init_db.py
 # This ensures proper application context management
@@ -344,8 +321,12 @@ google = oauth.register(
 
 # Google OAuth 2.0 Flow Configuration
 def get_redirect_uri():
-    """Always use production redirect URI"""
-    return 'https://www.calculatentrade.com/auth/google/callback'
+    """Auto-detect redirect URI based on environment"""
+    flask_env = os.getenv('FLASK_ENV', 'development')
+    if flask_env == 'production':
+        return 'https://www.calculatentrade.com/auth/google/callback'
+    else:
+        return 'http://localhost:5000/auth/google/callback'
 
 def create_flow(state=None):
     """Create Google OAuth flow"""
@@ -381,7 +362,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=True)  # Allow null for OAuth users
     coupon_code = db.Column(db.String(50), nullable=True)
     registered_on = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    verified = db.Column(db.Boolean, nullable=False, default=True)  # email verified
+    verified = db.Column(db.Boolean, nullable=False, default=False)  # email verified
     google_id = db.Column(db.String(100), nullable=True, unique=True)  # Google OAuth ID
     profile_pic = db.Column(db.String(200), nullable=True)  # Profile picture URL
     name = db.Column(db.String(100), nullable=True)  # Full name from Google
@@ -1084,8 +1065,9 @@ def get_price_route(symbol):
         print(f"[DEBUG ERROR] {error_msg}")
         return jsonify({"error": error_msg}), 500
 
-@app.route('/update-token', methods=['POST'])
-def update_token():
+# PRODUCTION: Comment out token update route (security risk)
+# @app.route('/update-token', methods=['POST'])
+# def update_token():
     """Update Dhan API access token"""
     try:
         # Check admin key for security
@@ -1509,8 +1491,9 @@ def register():
                 flash("An account with this email already exists. Please sign in instead.", "error")
                 return redirect(url_for("register"))
 
-            # Create user with verified=True (skip email verification)
-            user = User(email=email, verified=True)
+            # PRODUCTION: Enable email verification
+            # Create user with verified=False (require email verification)
+            user = User(email=email, verified=False)  # PRODUCTION: Change to False
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
@@ -1532,7 +1515,51 @@ def register():
 
     return render_template("register.html")
 
-# Email verification removed - users can register and login directly
+# Email verification
+@app.route("/verify-email", methods=["GET", "POST"])
+def verify_email_route():
+    email = (request.args.get("email") or request.form.get("email") or "").strip().lower()
+    if request.method == "POST":
+        otp_input = (request.form.get("otp") or "").strip()
+        try:
+            ok, msg, rec = verify_signup_otp(email, otp_input)
+            if not ok:
+                flash(msg, "error")
+                return render_template("verify_email.html", email=email)
+
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                flash("Account not found.", "error")
+                return render_template("verify_email.html", email=email)
+
+            user.verified = True
+            db.session.add(user)
+            if rec:
+                rec.used = True
+                db.session.add(rec)
+            db.session.commit()
+
+            flash("Email verified successfully! You can now log in.", "success")
+            return redirect(url_for("login"))
+
+        except Exception as e:
+            db.session.rollback()
+            print("[VERIFY-EMAIL][ERROR]", e)
+            flash("Email verification failed. Please try again.", "error")
+            return render_template("verify_email.html", email=email)
+    return render_template("verify_email.html", email=email)
+
+@app.route("/verify-email/resend", methods=["POST"])
+def resend_verify_email():
+    email = (request.form.get("email") or "").strip().lower()
+    try:
+        if User.query.filter_by(email=email).first():
+            issue_signup_otp(email)
+        flash("If the account exists, a new code has been sent.", "info")
+    except Exception as e:
+        print("[VERIFY-EMAIL-RESEND][ERROR]", e)
+        flash("Could not send a new code. Try again later.", "error")
+    return redirect(url_for("verify_email_route", email=email))
 
 # Login
 @app.route("/login", methods=["GET", "POST"])
@@ -1549,7 +1576,11 @@ def login():
                 flash("No account found with this email. Please register first.", "error")
                 return render_template("login.html")
             
-            # Skip email verification check - users can login directly
+            # Check if user exists and email is verified
+            if user and not user.verified:
+                flash("Please verify your email first. A new verification code has been sent.", "warning")
+                issue_signup_otp(email)
+                return redirect(url_for("verify_email_route", email=email))
 
             if user and user.google_id and not user.password_hash:
                 flash("This account uses Google sign-in. Please use 'Continue with Google' button.", "info")
@@ -1842,8 +1873,12 @@ def generate_coupon_url():
     if not coupon_code:
         return jsonify({"error": "Coupon code required"}), 400
     
-    # Always use production URL
-    base_url = "https://www.calculatentrade.com"
+    # Determine base URL based on environment
+    if request.headers.get('Host', '').startswith('localhost'):
+        base_url = f"http://{request.headers.get('Host')}"
+    else:
+        # Production - always use HTTPS with www.calculatentrade.com
+        base_url = "https://www.calculatentrade.com"
     
     subscription_url = f"{base_url}/subscription?coupon={coupon_code}&auto_apply=true"
     
@@ -2486,10 +2521,6 @@ def oauth_login():
 def oauth_callback():
     """Handle OAuth callback"""
     try:
-        # Log the current host for debugging
-        current_host = request.headers.get('Host', 'unknown')
-        app.logger.info(f"OAuth callback received on host: {current_host}")
-        
         # Get states
         session_state = session.get('oauth_state')
         returned_state = request.args.get('state')
@@ -2511,8 +2542,6 @@ def oauth_callback():
         
         # Create flow and fetch token
         flow = create_flow()
-        # Log the redirect URI being used
-        app.logger.info(f"Using redirect URI: {flow.redirect_uri}")
         flow.fetch_token(authorization_response=request.url)
         
         # Get user info from Google
@@ -4980,56 +5009,6 @@ def save_swing_position_update():
         
         trade = SwingTrade.query.get_or_404(trade_id)
         
-        # Update trade fields
-        trade.avg_price = float(data.get('avg_price', trade.avg_price))
-        trade.quantity = int(data.get('quantity', trade.quantity))
-        trade.stop_loss_price = float(data.get('stop_loss_price', trade.stop_loss_price))
-        trade.target_price = float(data.get('target_price', trade.target_price))
-        
-        # Recalculate derived fields
-        capital_used = trade.avg_price * trade.quantity
-        
-        if trade.trade_type == 'buy':
-            reward_per_share = trade.target_price - trade.avg_price
-            risk_per_share = trade.avg_price - trade.stop_loss_price
-        else:
-            reward_per_share = trade.avg_price - trade.target_price
-            risk_per_share = trade.stop_loss_price - trade.avg_price
-        
-        expected_return = (reward_per_share / trade.avg_price) * 100
-        risk_percent = (risk_per_share / trade.avg_price) * 100
-        
-        trade.capital_used = round(capital_used, 2)
-        trade.expected_return = round(expected_return, 2)
-        trade.risk_percent = round(risk_percent, 2)
-        trade.total_reward = round(reward_per_share * trade.quantity, 2)
-        trade.total_risk = round(risk_per_share * trade.quantity, 2)
-        trade.rr_ratio = round((reward_per_share / risk_per_share) if risk_per_share != 0 else 0.0, 2)
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'trade': {
-                'id': trade.id,
-                'avg_price': trade.avg_price,
-                'quantity': trade.quantity,
-                'stop_loss_price': trade.stop_loss_price,
-                'target_price': trade.target_price,
-                'capital_used': trade.capital_used,
-                'expected_return': trade.expected_return,
-                'risk_percent': trade.risk_percent,
-                'total_reward': trade.total_reward,
-                'total_risk': trade.total_risk,
-                'rr_ratio': trade.rr_ratio
-            }
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# Additional routes and functions can be added here
-        
         trade.avg_price = float(data.get('avg_price', trade.avg_price))
         trade.quantity = int(data.get('quantity', trade.quantity))
         trade.stop_loss_price = float(data.get('stop_loss_price', trade.stop_loss_price))
@@ -5963,29 +5942,17 @@ if os.getenv('FLASK_ENV') == 'production':
 
 # ------------------------------------------------------------------------------  
 # Development entry point (Gunicorn will not use this)
-# @app.route('/delete_swing/<int:trade_id>', methods=['POST'])
-# @login_required
-# def delete_swing_trade(trade_id):
-#     """Delete a swing trade"""
-#     try:
-#         trade = SwingTrade.query.get_or_404(trade_id)
-#         db.session.delete(trade)
-#         db.session.commit()
-#         return redirect(url_for('saved_swing'))
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
-
-# Main entry point for external access
-if __name__ == '__main__':
-    # Initialize database
-    with app.app_context():
-        try:
-            db.create_all()
-            print("Database initialized successfully")
         except Exception as e:
             print(f"Database initialization error: {e}")
     
-   
+    # Display connection info
+    print("\n" + "="*50)
+    print("🚀 CalculatenTrade Server Starting...")
+    print("="*50)
+    print(f"📱 Mobile Access: http://192.168.1.75:8080")
+    print(f"💻 Local Access: http://localhost:8080")
+    print("📶 Make sure your phone is on the same WiFi network")
+    print("="*50 + "\n")
     
     # Run with external access enabled
     app.run(host='0.0.0.0', port=8080, debug=True)
