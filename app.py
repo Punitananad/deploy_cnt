@@ -12,7 +12,7 @@ from functools import wraps
 from typing import Optional, Tuple
 from difflib import get_close_matches
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory, make_response
 from toast_utils import ToastManager, toast_success, toast_error, toast_warning, toast_info
 from token_store import save_token
 from flask_sqlalchemy import SQLAlchemy
@@ -177,6 +177,19 @@ app.jinja_env.globals['hasattr'] = hasattr
 
 # Add subscription function to Jinja2 globals
 app.jinja_env.globals['get_user_active_subscription'] = get_user_active_subscription
+
+# Prevent caching of authenticated pages
+@app.after_request
+def add_no_cache_headers(response):
+    """Add headers to prevent caching of authenticated pages"""
+    # Only add no-cache headers for HTML pages (not static files)
+    if response.content_type and 'text/html' in response.content_type:
+        # Check if user is authenticated
+        if current_user.is_authenticated:
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+    return response
 
 # Register multi-broker blueprints (ONCE) with unique names
 try:
@@ -1459,6 +1472,23 @@ def home():
     
     return render_template("home.html")
 
+@app.route("/health")
+def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        # Check database connection
+        db.session.execute(db.text("SELECT 1"))
+        db_status = "healthy"
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
+    
+    return jsonify({
+        "status": "ok",
+        "environment": os.getenv('FLASK_ENV', 'unknown'),
+        "database": db_status,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+
 @app.route("/employee-portal")
 def employee_portal():
     return redirect(url_for('employee_dashboard.employee_login'))
@@ -1570,13 +1600,47 @@ def login():
 
 @app.route("/logout")
 def logout():
-    logout_user()
-    # Clear all session data
-    session.clear()
-    # Make session non-permanent
-    session.permanent = False
-    toast_success("Successfully logged out!")
-    return redirect(url_for("login"))
+    try:
+        # Logout the user if authenticated
+        if current_user.is_authenticated:
+            logout_user()
+        
+        # Clear all session data
+        session.clear()
+        
+        # Make session non-permanent
+        session.permanent = False
+        
+        # Flash success message
+        flash("Successfully logged out!", "success")
+        
+        # Create response with redirect
+        response = make_response(redirect(url_for("login")))
+        
+        # Clear all cookies - handle both development and production
+        cookie_names = ['session', 'remember_token', 'calculatentrade_session']
+        for cookie_name in cookie_names:
+            response.set_cookie(cookie_name, '', expires=0, path='/')
+            # Also clear with domain for production
+            if os.getenv('FLASK_ENV') == 'production':
+                response.set_cookie(cookie_name, '', expires=0, path='/', domain='.calculatentrade.com')
+        
+        # Add cache control headers to prevent caching
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        
+        return response
+        
+    except Exception as e:
+        # Log the error and still try to logout
+        print(f"[LOGOUT ERROR] {str(e)}")
+        app.logger.error(f"Logout error: {str(e)}")
+        
+        # Force clear session even if there's an error
+        session.clear()
+        flash("Logged out successfully!", "success")
+        return redirect(url_for("login"))
 
 # Subscription routes
 @app.route("/subscription")
